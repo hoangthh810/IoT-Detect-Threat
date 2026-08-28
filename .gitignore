@@ -1,0 +1,12 @@
+# Local Python/Spark runtime artifacts
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Full CICIoT2023 download is local-only. The small development sample is kept separately.
+MERGED_CSV/
+
