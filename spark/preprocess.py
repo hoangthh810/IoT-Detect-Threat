@@ -209,10 +209,14 @@ def _invalid_label_condition(dataframe: DataFrame) -> Column:
     return F.col(LABEL_COLUMN).isNull() | (label == "") | (~label.isin(sorted(KNOWN_LABELS)))
 
 
-def cast_numeric_columns(dataframe: DataFrame) -> DataFrame:
-    """Cast all known source feature columns to double for Spark ML compatibility."""
-    _require_columns(dataframe, NUMERIC_SOURCE_COLUMNS)
-    numeric_columns = set(NUMERIC_SOURCE_COLUMNS)
+def cast_numeric_columns(
+    dataframe: DataFrame,
+    *,
+    required_columns: Sequence[str] = NUMERIC_SOURCE_COLUMNS,
+) -> DataFrame:
+    """Cast available source features after validating the required contract."""
+    _require_columns(dataframe, required_columns)
+    numeric_columns = set(NUMERIC_SOURCE_COLUMNS) & set(dataframe.columns)
     return dataframe.select(
         *[
             F.col(column).cast(DoubleType()).alias(column)
@@ -259,12 +263,18 @@ def preprocess_dataframe(
     identical in both cases, and extra metadata columns remain separate from the
     VectorAssembler input list.
     """
-    _require_columns(dataframe, NUMERIC_SOURCE_COLUMNS)
+    required_numeric_columns = (
+        NUMERIC_SOURCE_COLUMNS if require_label else SELECTED_FEATURES
+    )
+    _require_columns(dataframe, required_numeric_columns)
     valid_rows = ~_any_problem(SELECTED_FEATURES)
     if require_label:
         valid_rows = valid_rows & (~_invalid_label_condition(dataframe))
 
-    result = cast_numeric_columns(dataframe.filter(valid_rows))
+    result = cast_numeric_columns(
+        dataframe.filter(valid_rows),
+        required_columns=required_numeric_columns,
+    )
     if require_label:
         result = map_binary_label(result)
     if include_features_vector:
@@ -272,14 +282,26 @@ def preprocess_dataframe(
     return result
 
 
-def split_dataset(
-    dataframe: DataFrame, *, seed: int = SPLIT_SEED
-) -> tuple[DataFrame, DataFrame, DataFrame]:
-    """Deduplicate model examples, then create reproducible 70/15/15 splits."""
+def deduplicate_model_examples(dataframe: DataFrame) -> DataFrame:
+    """Remove repeated offline model examples using the verified identity policy."""
     deduplication_columns = [*SELECTED_FEATURES, BINARY_LABEL_COLUMN]
     _require_columns(dataframe, deduplication_columns)
-    deduplicated = dataframe.dropDuplicates(deduplication_columns)
-    train, validation, test = deduplicated.randomSplit(SPLIT_WEIGHTS, seed=seed)
+    return dataframe.dropDuplicates(deduplication_columns)
+
+
+def split_dataset(
+    dataframe: DataFrame,
+    *,
+    seed: int = SPLIT_SEED,
+    model_examples_are_deduplicated: bool = False,
+) -> tuple[DataFrame, DataFrame, DataFrame]:
+    """Create reproducible 70/15/15 splits after model-example deduplication."""
+    model_examples = (
+        dataframe
+        if model_examples_are_deduplicated
+        else deduplicate_model_examples(dataframe)
+    )
+    train, validation, test = model_examples.randomSplit(SPLIT_WEIGHTS, seed=seed)
     return train, validation, test
 
 
@@ -383,7 +405,7 @@ def validate_preprocessing(input_path: Path) -> None:
         )
 
         unlabeled_prepared = preprocess_dataframe(
-            raw.drop(LABEL_COLUMN), require_label=False
+            raw.select(*SELECTED_FEATURES), require_label=False
         ).cache()
         unlabeled_rows = unlabeled_prepared.count()
         unlabeled_first_vector = unlabeled_prepared.select(FEATURES_COLUMN).first()
@@ -446,6 +468,7 @@ def validate_preprocessing(input_path: Path) -> None:
         print(f"Post-clean invalid profile: {post_clean_issues or 'none'}")
 
         print("\n=== SHARED UNLABELED PATH SMOKE CHECK ===")
+        print(f"Raw input fields: {len(SELECTED_FEATURES)} selected model features")
         print(f"Rows from input without Label: {unlabeled_rows}")
         print(f"Feature vector dimension: {unlabeled_dimension}")
         print(

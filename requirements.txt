@@ -1,3 +1,5 @@
+confluent-kafka==2.15.0
 numpy==2.3.4
 pyspark==3.5.7
 setuptools==84.0.0
+streamlit==1.63.0

@@ -6,7 +6,14 @@ __pycache__/
 spark-warehouse/
 metastore_db/
 derby.log
+.spark-local/
+.runtime/
+data/history/*.sqlite3
+data/history/*.sqlite3-wal
+data/history/*.sqlite3-shm
 
 # Full CICIoT2023 download is local-only. The small development sample is kept separately.
 MERGED_CSV/
-
+MERGED_CSV(1).zip
+MERGED_CSV(1)/
+MERGED_CSV(1).zip
