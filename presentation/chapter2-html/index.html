@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light">
+  <title>Chương 2 — Tìm hiểu bộ dữ liệu CICIoT2023</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="deck" aria-label="Chương 2 — Tìm hiểu bộ dữ liệu">
+    <section id="slide-1" class="slide slide--cover">
+      <div class="cover-grid" aria-hidden="true"></div>
+      <div class="cover-orb cover-orb--one" aria-hidden="true"></div>
+      <div class="cover-orb cover-orb--two" aria-hidden="true"></div>
+      <header class="topbar topbar--cover">
+        <span>ĐỒ ÁN BIG DATA · PHÁT HIỆN XÂM NHẬP IOT</span>
+        <span>CHƯƠNG 02</span>
+      </header>
+
+      <div class="cover-copy">
+        <p class="eyebrow">CHƯƠNG 2</p>
+        <h1>Tìm hiểu bộ dữ liệu</h1>
+        <p class="cover-subtitle">Từ 45 triệu bản ghi CICIoT2023 đến bộ dữ liệu 27 đặc trưng sẵn sàng cho học máy</p>
+        <div class="cover-rule"></div>
+        <div class="cover-facts">
+          <span><b>63</b> tệp CSV</span>
+          <span><b>45.019.243</b> dòng thô</span>
+          <span><b>40</b> cột đầu vào</span>
+          <span><b>27</b> feature được chọn</span>
+        </div>
+      </div>
+
+      <div class="cover-visual" aria-label="Tóm tắt luồng chuẩn bị dữ liệu">
+        <div class="database-hero">
+          <span class="db-top"></span><span class="db-mid"></span><span class="db-bottom"></span>
+          <b>CICIoT<br>2023</b>
+        </div>
+        <div class="cover-flow">
+          <span>RAW CSV</span><i></i><span>SPARK</span><i></i><span>ML-READY</span>
+        </div>
+      </div>
+
+      <div class="chapter-map">
+        <span>01 · Tổng quan</span>
+        <span>02 · Dữ liệu sử dụng</span>
+        <span>03 · Feature &amp; chất lượng</span>
+        <span>04 · Tiền xử lý &amp; kết quả</span>
+      </div>
+      <span class="slide-number">01 / 08</span>
+    </section>
+
+    <section id="slide-2" class="slide">
+      <header class="topbar"><span>CHƯƠNG 2 · TÌM HIỂU BỘ DỮ LIỆU</span><span>01 · GIỚI THIỆU</span></header>
+      <p class="section-kicker">1. GIỚI THIỆU DATASET</p>
+      <h2>CICIoT2023 mô phỏng lưu lượng thật trong một hệ sinh thái IoT quy mô lớn</h2>
+
+      <div class="intro-layout">
+        <div class="intro-copy">
+          <p class="lead">CICIoT2023 là bộ dữ liệu an ninh mạng dành cho bài toán phát hiện xâm nhập IoT. Dữ liệu được thu trong môi trường thử nghiệm có thiết bị thật, gồm cả lưu lượng bình thường và lưu lượng tấn công.</p>
+          <div class="stat-row">
+            <article><strong>105</strong><span>thiết bị trong topology IoT</span></article>
+            <article><strong>33</strong><span>kiểu tấn công được thực thi</span></article>
+            <article><strong>7</strong><span>nhóm hành vi tấn công</span></article>
+          </div>
+          <div class="attack-tags" aria-label="Bảy nhóm tấn công">
+            <span>DDoS</span><span>DoS</span><span>Recon</span><span>Web-based</span>
+            <span>Brute Force</span><span>Spoofing</span><span>Mirai</span>
+          </div>
+          <div class="message"><b>Vì sao phù hợp?</b> Có dữ liệu lớn, nhiều kiểu hành vi và mất cân bằng lớp rõ rệt — phù hợp để kiểm chứng pipeline Big Data và mô hình phát hiện xâm nhập.</div>
+        </div>
+
+        <div class="iot-map" aria-label="Mô hình dữ liệu từ thiết bị tới bản ghi mạng">
+          <div class="hub"><span>DATASET</span><b>CICIoT2023</b></div>
+          <div class="device device--camera"><span>CAM</span><small>Camera</small></div>
+          <div class="device device--sensor"><span>SEN</span><small>Sensor</small></div>
+          <div class="device device--gateway"><span>GW</span><small>Gateway</small></div>
+          <div class="device device--attacker"><span>!</span><small>Attack node</small></div>
+          <i class="wire wire--one"></i><i class="wire wire--two"></i><i class="wire wire--three"></i><i class="wire wire--four"></i>
+          <div class="packet packet--one">TCP · 64 B</div><div class="packet packet--two">UDP · HIGH RATE</div>
+        </div>
+      </div>
+
+      <p class="source">Nguồn giới thiệu: Canadian Institute for Cybersecurity — CICIoT2023.</p>
+      <span class="slide-number">02 / 08</span>
+    </section>
+
+    <section id="slide-3" class="slide">
+      <header class="topbar"><span>CHƯƠNG 2 · TÌM HIỂU BỘ DỮ LIỆU</span><span>02 · PHẠM VI SỬ DỤNG</span></header>
+      <p class="section-kicker">2. NHÓM SỬ DỤNG DỮ LIỆU GÌ?</p>
+      <h2>Chọn bản CSV đặc trưng luồng mạng và quy bài toán về phân loại nhị phân</h2>
+
+      <div class="choice-layout">
+        <div class="file-stack" aria-label="63 phân vùng CSV">
+          <div class="file-sheet file-sheet--back"></div>
+          <div class="file-sheet file-sheet--middle"></div>
+          <div class="file-sheet file-sheet--front">
+            <div class="csv-badge">CSV</div>
+            <b>MERGED_CSV</b>
+            <span>Merged01.csv</span><span>···</span><span>Merged63.csv</span>
+            <strong>8,66 GiB</strong>
+          </div>
+        </div>
+
+        <div class="choice-content">
+          <div class="decision-grid">
+            <article>
+              <span class="decision-no">01</span>
+              <div><b>Dạng dữ liệu</b><p>63 file CSV đã trích xuất đặc trưng từ lưu lượng mạng; nhóm không dùng PCAP thô.</p></div>
+            </article>
+            <article>
+              <span class="decision-no">02</span>
+              <div><b>Phạm vi huấn luyện</b><p>Dùng toàn bộ 63 phân vùng cục bộ, không chỉ dùng mẫu 30.000 dòng.</p></div>
+            </article>
+            <article>
+              <span class="decision-no">03</span>
+              <div><b>Nhãn đầu ra</b><p><code>BENIGN → Normal (0)</code>; 33 nhãn tấn công → <code>Attack (1)</code>.</p></div>
+            </article>
+            <article>
+              <span class="decision-no">04</span>
+              <div><b>Mục tiêu</b><p>Phát hiện có tấn công hay không theo thời gian thực, chưa phân loại họ tấn công.</p></div>
+            </article>
+          </div>
+          <div class="binary-map">
+            <div class="label-cloud">
+              <span>DDoS</span><span>DoS</span><span>Mirai</span><span>Recon</span><span>Web</span><span>Spoofing</span><span>Brute Force</span>
+            </div>
+            <i>→</i>
+            <div class="binary-target"><span class="normal">NORMAL · 0</span><span class="attack">ATTACK · 1</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="message message--wide"><b>Giới hạn có chủ đích:</b> mô hình chỉ dự đoán nhị phân Normal/Attack. Tên kịch bản trên dashboard là metadata mô phỏng, không phải kết quả phân loại đa lớp.</div>
+      <span class="slide-number">03 / 08</span>
+    </section>
+
+    <section id="slide-4" class="slide">
+      <header class="topbar"><span>CHƯƠNG 2 · TÌM HIỂU BỘ DỮ LIỆU</span><span>03 · MỔ XẺ DỮ LIỆU</span></header>
+      <p class="section-kicker">3. CẤU TRÚC DATASET BAN ĐẦU</p>
+      <h2>Dữ liệu thô có 45 triệu dòng, 40 cột và mất cân bằng lớp rất mạnh</h2>
+
+      <div class="anatomy-grid">
+        <article class="metric-card metric-card--blue"><span>SỐ DÒNG THÔ</span><strong>45.019.243</strong><small>trên toàn bộ 63 CSV</small></article>
+        <article class="metric-card metric-card--teal"><span>SỐ CỘT</span><strong>40</strong><small>39 biến đầu vào + 1 Label</small></article>
+        <article class="metric-card metric-card--violet"><span>NhãN GỐC</span><strong>34</strong><small>1 BENIGN + 33 kiểu attack</small></article>
+        <article class="metric-card metric-card--orange"><span>DUNG LƯỢNG</span><strong>8,66 GiB</strong><small>9.300.139.459 bytes</small></article>
+      </div>
+
+      <div class="anatomy-lower">
+        <div class="schema-panel">
+          <h3>40 cột được chia thành 5 nhóm thông tin</h3>
+          <div class="schema-groups">
+            <span><b>Header &amp; timing</b><small>Header_Length, Time_To_Live, Rate, IAT…</small></span>
+            <span><b>TCP flags</b><small>fin, syn, rst, psh, ack, ece, cwr…</small></span>
+            <span><b>Protocol / application</b><small>HTTP, HTTPS, DNS, TCP, UDP, ICMP…</small></span>
+            <span><b>Packet statistics</b><small>Tot sum, Min, Max, AVG, Std, Variance…</small></span>
+            <span><b>Target</b><small>Label</small></span>
+          </div>
+        </div>
+
+        <div class="imbalance-panel">
+          <h3>Phân bố nhãn hợp lệ trước làm sạch</h3>
+          <div class="bar-title"><span>Attack</span><b>43.967.861 · 97,66%</b></div>
+          <div class="class-bar"><span style="width:97.66%"></span></div>
+          <div class="bar-title"><span>BENIGN</span><b>1.051.373 · 2,34%</b></div>
+          <div class="class-bar class-bar--normal"><span style="width:2.34%"></span></div>
+          <p><b>9 dòng</b> có Label null được xem là không hợp lệ. Vì lớp Attack chiếm áp đảo, Accuracy đơn thuần chưa đủ để đánh giá mô hình.</p>
+        </div>
+      </div>
+      <span class="slide-number">04 / 08</span>
+    </section>
+
+    <section id="slide-5" class="slide slide--features">
+      <header class="topbar"><span>CHƯƠNG 2 · TÌM HIỂU BỘ DỮ LIỆU</span><span>04 · LỰA CHỌN FEATURE</span></header>
+      <p class="section-kicker">4. NHÓM CHỌN NHỮNG CỘT NÀO?</p>
+      <h2>Giữ 27 feature có ý nghĩa, loại 12 feature thưa, trùng lặp hoặc khó diễn giải</h2>
+
+      <div class="feature-layout">
+        <div class="selected-panel">
+          <div class="panel-heading"><span>ĐƯỢC CHỌN</span><strong>27 features</strong></div>
+          <div class="feature-group">
+            <b>Traffic &amp; timing · 4</b>
+            <p><code>Header_Length</code> <code>Time_To_Live</code> <code>Rate</code> <code>IAT</code></p>
+          </div>
+          <div class="feature-group">
+            <b>TCP flags &amp; counters · 9</b>
+            <p><code>fin_flag_number</code> <code>syn_flag_number</code> <code>rst_flag_number</code> <code>psh_flag_number</code> <code>ack_flag_number</code> <code>ack_count</code> <code>syn_count</code> <code>fin_count</code> <code>rst_count</code></p>
+          </div>
+          <div class="feature-group">
+            <b>Protocol / application · 8</b>
+            <p><code>HTTP</code> <code>HTTPS</code> <code>DNS</code> <code>TCP</code> <code>UDP</code> <code>ARP</code> <code>ICMP</code> <code>IPv</code></p>
+          </div>
+          <div class="feature-group">
+            <b>Packet statistics · 6</b>
+            <p><code>Tot sum</code> <code>Min</code> <code>Max</code> <code>AVG</code> <code>Std</code> <code>Variance</code></p>
+          </div>
+        </div>
+
+        <div class="excluded-panel">
+          <div class="panel-heading panel-heading--muted"><span>LOẠI KHỎI VECTOR</span><strong>12 features</strong></div>
+          <div class="reason-row"><span>Rất thưa / gần hằng</span><b>8</b><p>ece, cwr, Telnet, SMTP, SSH, IRC, DHCP, IGMP có ≥ 99,49% giá trị 0.</p></div>
+          <div class="reason-row"><span>Trùng thông tin</span><b>2</b><p><code>LLC = IPv</code> và <code>Tot size = AVG</code> trên toàn bộ mẫu 30.000 dòng.</p></div>
+          <div class="reason-row"><span>Ít biến thiên</span><b>1</b><p><code>Number = 100</code> ở 94,99% dòng mẫu.</p></div>
+          <div class="reason-row"><span>Mã thứ bậc mơ hồ</span><b>1</b><p><code>Protocol Type</code> là mã phân loại; các cột indicator đã giữ thông tin protocol.</p></div>
+          <div class="not-feature"><b>Label không phải feature</b><span>Loại khỏi vector để tránh rò rỉ nhãn.</span></div>
+        </div>
+      </div>
+
+      <p class="feature-note"><b>Nguyên tắc:</b> lựa chọn dựa trên profiling mẫu phát triển 30.000 dòng; pipeline luôn lắp vector theo đúng danh sách 27 feature, không tự lấy toàn bộ cột.</p>
+      <span class="slide-number">05 / 08</span>
+    </section>
+
+    <section id="slide-6" class="slide slide--quality">
+      <header class="topbar"><span>CHƯƠNG 2 · TÌM HIỂU BỘ DỮ LIỆU</span><span>04 · ĐÁNH GIÁ CHẤT LƯỢNG</span></header>
+      <p class="section-kicker">ĐÁNH GIÁ THEO TÀI LIỆU BUỔI 3</p>
+      <h2>Năm chiều chất lượng: dữ liệu thô còn lỗi, dữ liệu sau xử lý đáp ứng đầu vào mô hình</h2>
+
+      <div class="quality-note"><b>Lưu ý thuật ngữ:</b> PDF dùng 5 chiều chất lượng dữ liệu — <strong>Uniqueness, Completeness, Validity, Accuracy, Consistency</strong>. Đây không phải “5V Big Data”.</div>
+
+      <div class="quality-table">
+        <div class="quality-head"><span>CHIỀU</span><span>Ý NGHĨA</span><span>DỮ LIỆU THÔ</span><span>SAU TIỀN XỬ LÝ</span></div>
+        <div class="quality-row">
+          <b>Duy nhất</b><span>Mỗi mẫu học không bị lặp</span><span class="status status--warn">Chưa đạt · trùng nhiều</span><span class="status status--ok">Đạt ở mức mẫu học</span>
+        </div>
+        <div class="quality-row">
+          <b>Đầy đủ</b><span>Không thiếu giá trị cần thiết</span><span class="status status--warn">Có null ở cột số / Label</span><span class="status status--ok">27 feature không còn null</span>
+        </div>
+        <div class="quality-row">
+          <b>Hợp lệ</b><span>Đúng kiểu, miền và định dạng</span><span class="status status--warn">Có Rate = +Inf</span><span class="status status--ok">Không NaN / ±Inf</span>
+        </div>
+        <div class="quality-row">
+          <b>Chính xác</b><span>Phản ánh đúng thực tế</span><span class="status status--mid">Không thể chứng minh tuyệt đối</span><span class="status status--mid">Kiểm soát bằng rule &amp; nhãn gốc</span>
+        </div>
+        <div class="quality-row">
+          <b>Nhất quán</b><span>Cùng nghĩa, cùng cách biểu diễn</span><span class="status status--ok">63 file cùng header 40 cột</span><span class="status status--ok">Cùng schema + mapping nhị phân</span>
+        </div>
+      </div>
+
+      <div class="quality-conclusion">
+        <div><b>Kết luận trước xử lý</b><span>Không đạt hoàn toàn vì còn trùng, thiếu và giá trị không hữu hạn.</span></div>
+        <i>→</i>
+        <div><b>Kết luận sau xử lý</b><span>Đạt yêu cầu kỹ thuật để lắp vector 27 chiều và huấn luyện; “chính xác thực tế” vẫn là giới hạn cần nêu.</span></div>
+      </div>
+      <span class="slide-number">06 / 08</span>
+    </section>
+
+    <section id="slide-7" class="slide slide--pipeline">
+      <header class="topbar"><span>CHƯƠNG 2 · TÌM HIỂU BỘ DỮ LIỆU</span><span>05 · TIỀN XỬ LÝ</span></header>
+      <p class="section-kicker">5. CÁCH TIỀN XỬ LÝ DỮ LIỆU</p>
+      <h2>Một lõi tiền xử lý dùng chung cho huấn luyện offline và suy luận realtime</h2>
+
+      <div class="pipeline-flow" aria-label="Pipeline tiền xử lý gồm sáu bước">
+        <article><span>01</span><b>Đọc CSV dạng chuỗi</b><p>Giữ token thô để phát hiện lỗi ép kiểu và giá trị không hữu hạn.</p></article>
+        <i></i>
+        <article><span>02</span><b>Kiểm tra schema</b><p>Xác nhận header, cột bắt buộc và ánh xạ đúng tên trường.</p></article>
+        <i></i>
+        <article><span>03</span><b>Ép kiểu Double</b><p>Chuyển các cột số, ghi nhận cast failure thay vì bỏ qua âm thầm.</p></article>
+        <i></i>
+        <article><span>04</span><b>Lọc dòng lỗi</b><p>Loại null, NaN, ±Inf ở feature chọn và nhãn không hợp lệ.</p></article>
+        <i></i>
+        <article><span>05</span><b>Chuẩn hóa nhãn</b><p>BENIGN → 0; 33 attack labels → 1; vẫn giữ Label gốc.</p></article>
+        <i></i>
+        <article><span>06</span><b>Rẽ nhánh sử dụng</b><p>Offline: deduplicate và split 70/15/15. Realtime: lắp vector 27 chiều để suy luận.</p></article>
+      </div>
+
+      <div class="policy-grid">
+        <div class="policy policy--do">
+          <h3>NHÓM CÓ THỰC HIỆN</h3>
+          <p><span>✓</span> Explicit schema và kiểm tra giá trị lỗi</p>
+          <p><span>✓</span> Deduplicate trước khi chia tập</p>
+          <p><span>✓</span> Seed 42 để tái lập Train/Validation/Test</p>
+          <p><span>✓</span> Class weight chỉ tính trên Train</p>
+        </div>
+        <div class="policy policy--dont">
+          <h3>NHÓM KHÔNG THỰC HIỆN</h3>
+          <p><span>×</span> Không điền mean/median hoặc zero-fill</p>
+          <p><span>×</span> Không clipping và không scaling</p>
+          <p><span>×</span> Không over/undersampling</p>
+          <p><span>×</span> Không dùng Label trong feature vector</p>
+        </div>
+      </div>
+
+      <div class="message message--wide"><b>Lý do deduplicate trước split:</b> cùng một mẫu không được xuất hiện ở cả Train và Test, tránh rò rỉ dữ liệu làm kết quả đánh giá cao giả tạo.</div>
+      <span class="slide-number">07 / 08</span>
+    </section>
+
+    <section id="slide-8" class="slide slide--results">
+      <header class="topbar"><span>CHƯƠNG 2 · TÌM HIỂU BỘ DỮ LIỆU</span><span>06 · KẾT QUẢ</span></header>
+      <p class="section-kicker">6. KẾT QUẢ SAU TIỀN XỬ LÝ</p>
+      <h2>Từ 45 triệu dòng thô còn 20,36 triệu mẫu học sạch và không giao nhau</h2>
+
+      <div class="funnel">
+        <div class="funnel-step funnel-step--raw"><span>DỮ LIỆU THÔ</span><b>45.019.243</b><small>40 cột · 63 files</small></div>
+        <div class="funnel-arrow"><b>− 1.000</b><span>dòng không hợp lệ</span></div>
+        <div class="funnel-step funnel-step--clean"><span>ML-READY</span><b>45.018.243</b><small>27 features + labels</small></div>
+        <div class="funnel-arrow"><b>− 24.655.458</b><span>mẫu học trùng</span></div>
+        <div class="funnel-step funnel-step--final"><span>SAU DEDUP</span><b>20.362.785</b><small>vector 27 chiều</small></div>
+      </div>
+
+      <div class="result-lower">
+        <div class="split-panel">
+          <h3>Chia dữ liệu tái lập với seed 42</h3>
+          <div class="split-bar"><span class="train">70%</span><span class="validation">15%</span><span class="test">15%</span></div>
+          <div class="split-list">
+            <p><i class="dot dot--train"></i><b>Train</b><span>14.253.082</span></p>
+            <p><i class="dot dot--validation"></i><b>Validation</b><span>3.053.542</span></p>
+            <p><i class="dot dot--test"></i><b>Test</b><span>3.056.161</span></p>
+          </div>
+        </div>
+
+        <div class="checks-panel">
+          <h3>Kiểm chứng đầu ra</h3>
+          <div class="check-grid">
+            <span><b>0</b> null trong 27 feature</span>
+            <span><b>0</b> NaN sau làm sạch</span>
+            <span><b>0</b> giá trị ±Infinity</span>
+            <span><b>0</b> mẫu trùng giữa các split</span>
+            <span><b>27</b> chiều vector cố định</span>
+            <span><b>2</b> lớp Normal / Attack</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="final-takeaway"><span>KẾT LUẬN</span><b>Dữ liệu đã sẵn sàng cho Random Forest và được tái sử dụng nguyên vẹn trong pipeline realtime.</b></div>
+      <span class="slide-number">08 / 08</span>
+    </section>
+  </main>
+</body>
+</html>

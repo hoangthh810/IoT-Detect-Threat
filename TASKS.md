@@ -200,6 +200,35 @@ outside all three tables. Static compilation, CLI, schema/idempotency/UPSERT,
 dependency, live Kafka/Spark, Streamlit browser, restart, and clean-shutdown
 checks passed. SQLite uses no new package; requirements remain unchanged.
 
+## Post-MVP UX and operation improvement
+
+**Objective:** Make the verified MVP easier for a non-technical viewer to
+understand and easier to operate without changing its architecture or analytics
+semantics.
+
+- [x] Present the authoritative Phase 7 status as a large friendly
+  `SAFE`/`WARNING`/`CRITICAL` banner without recalculating thresholds.
+- [x] Show four plain-language KPIs, detailed realtime visualizations, readable
+  predicted-Attack alerts, a true waiting state, and separated technical details.
+- [x] Organize the dashboard into Command Overview, Traffic Matrix, Threat
+  Intelligence, and Pipeline Control pages without adding another framework or
+  changing the snapshot contract.
+- [x] Preserve the two-second Streamlit fragment refresh and the transient JSON
+  snapshot boundary.
+- [x] Add executable Bash commands to start, stop, run one scenario, and run the
+  complete demo without requiring virtualenv activation.
+- [x] Keep Kafka formatting manual and one-time, track only launcher-owned PIDs,
+  preserve external Kafka ownership, and never reset SQLite history.
+- [x] Keep the verified Phase 1-9 manual workflow and add a concise Quick Start.
+
+**Evidence:** `dashboard/app.py`, `scripts/start_system.sh`,
+`scripts/stop_system.sh`, `scripts/run_scenario.sh`, and `scripts/demo.sh` passed
+static checks. Live `NORMAL`, `DDOS_BURST`, and `MIXED` runs displayed the
+expected `SAFE`, `CRITICAL`, and `WARNING` states without a browser reload. The
+full four-segment demo completed with zero producer delivery failures. Repeated
+startup retained exactly one launcher-owned Kafka, Spark, and Streamlit process;
+shutdown stopped those processes and durable history remained queryable.
+
 ## Optional backlog - do not start before the MVP is stable
 
 - [ ] Multiclass attack classification.

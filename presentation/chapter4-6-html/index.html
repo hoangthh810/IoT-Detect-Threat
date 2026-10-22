@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light">
+  <title>Phần 4–6: Kết quả thực nghiệm, kết luận và demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="deck" aria-label="Phần 4 đến phần 6 của báo cáo đồ án">
+    <section id="slide-1" class="slide slide--setup">
+      <header class="topbar"><span>ĐỒ ÁN BIG DATA: PHÁT HIỆN XÂM NHẬP IOT</span><span>PHẦN 04: KẾT QUẢ THỰC NGHIỆM</span></header>
+      <p class="section-kicker">4.1: PHẠM VI ĐÁNH GIÁ</p>
+      <h1>Thực nghiệm kiểm tra cả mô hình học máy và pipeline realtime</h1>
+      <p class="subtitle">Số liệu trên các slide là kết quả đã đo trong Phase 3C và lần chạy end-to-end cuối của Phase 9.</p>
+
+      <div class="experiment-stage">
+        <article class="stage stage--data">
+          <span class="stage-no">01</span>
+          <div class="stage-icon">45M</div>
+          <h3>Dữ liệu</h3>
+          <p>63 CSV CICIoT2023</p>
+          <b>27 feature, nhãn nhị phân</b>
+        </article>
+        <i class="connector"></i>
+        <article class="stage stage--model">
+          <span class="stage-no">02</span>
+          <div class="stage-icon">RF</div>
+          <h3>Mô hình</h3>
+          <p>Random Forest trên Spark MLlib</p>
+          <b>Baseline và class-weighted</b>
+        </article>
+        <i class="connector"></i>
+        <article class="stage stage--stream">
+          <span class="stage-no">03</span>
+          <div class="stage-icon">5/s</div>
+          <h3>Realtime</h3>
+          <p>Kafka chuyển dữ liệu cho Spark Streaming</p>
+          <b>Cửa sổ 10 giây, trượt 5 giây</b>
+        </article>
+        <i class="connector"></i>
+        <article class="stage stage--output">
+          <span class="stage-no">04</span>
+          <div class="stage-icon">UI</div>
+          <h3>Đầu ra</h3>
+          <p>Dashboard và cảnh báo</p>
+          <b>SQLite lưu lịch sử bền vững</b>
+        </article>
+      </div>
+
+      <div class="evaluation-strip">
+        <div><span>Đánh giá mô hình</span><b>Precision, Recall, F1, Specificity và Confusion matrix</b></div>
+        <div><span>Đánh giá hệ thống</span><b>Trạng thái trực tiếp, cảnh báo, lưu lịch sử và xử lý bản ghi lỗi</b></div>
+      </div>
+      <p class="source">Nguồn số liệu: kết quả thực nghiệm Phase 3C và Phase 9 của đồ án.</p>
+      <span class="slide-number">01 / 08</span>
+    </section>
+
+    <section id="slide-2" class="slide">
+      <header class="topbar"><span>PHẦN 04: KẾT QUẢ THỰC NGHIỆM</span><span>4.2: QUY MÔ DỮ LIỆU</span></header>
+      <p class="section-kicker">TỪ DỮ LIỆU THÔ ĐẾN TẬP KIỂM THỬ</p>
+      <h2>Hơn 20 triệu mẫu duy nhất được dùng để huấn luyện và đánh giá</h2>
+
+      <div class="data-funnel">
+        <article class="funnel-block funnel-block--raw">
+          <span>DỮ LIỆU THÔ</span><strong>45.019.243</strong><small>63 phân vùng CSV, 8,66 GiB</small>
+        </article>
+        <div class="funnel-step"><b>−1.000</b><span>dòng lỗi bị lọc</span></div>
+        <article class="funnel-block funnel-block--clean">
+          <span>ML-READY</span><strong>45.018.243</strong><small>27 feature hợp lệ</small>
+        </article>
+        <div class="funnel-step"><b>−24.655.458</b><span>mẫu học trùng</span></div>
+        <article class="funnel-block funnel-block--unique">
+          <span>MẪU DUY NHẤT</span><strong>20.362.785</strong><small>loại trùng trước khi chia tập</small>
+        </article>
+      </div>
+
+      <div class="data-lower">
+        <div class="split-chart">
+          <h3>Phân chia dữ liệu với seed 42</h3>
+          <div class="split-bar" aria-label="Train 70 phần trăm, Validation 15 phần trăm, Test 15 phần trăm">
+            <span class="train">TRAIN 70%</span><span class="validation">VALIDATION 15%</span><span class="test">TEST 15%</span>
+          </div>
+          <div class="split-labels">
+            <p><i class="dot dot--train"></i><span>Train</span><b>14.253.082</b></p>
+            <p><i class="dot dot--validation"></i><span>Validation</span><b>3.053.542</b></p>
+            <p><i class="dot dot--test"></i><span>Test</span><b>3.056.161</b></p>
+          </div>
+        </div>
+
+        <div class="class-chart">
+          <h3>Phân bố sau loại trùng</h3>
+          <div class="donut" aria-label="Attack 94,86 phần trăm và Normal 5,14 phần trăm"><div><b>20,36M</b><span>mẫu học</span></div></div>
+          <div class="donut-legend">
+            <p><i class="legend-dot legend-dot--attack"></i><span>Attack</span><b>94,86%</b></p>
+            <p><i class="legend-dot legend-dot--normal"></i><span>Normal</span><b>5,14%</b></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="takeaway"><b>Ý nghĩa:</b> loại mẫu trùng trước khi chia tập ngăn cùng một vector xuất hiện ở cả Train và Test, giảm nguy cơ data leakage.</div>
+      <span class="slide-number">02 / 08</span>
+    </section>
+
+    <section id="slide-3" class="slide slide--model-result">
+      <header class="topbar"><span>PHẦN 04: KẾT QUẢ THỰC NGHIỆM</span><span>4.3: SO SÁNH MÔ HÌNH</span></header>
+      <p class="section-kicker">BASELINE VÀ CLASS-WEIGHTED RANDOM FOREST</p>
+      <h2>Class weighting giảm cảnh báo sai, đổi lại Attack Recall thấp hơn</h2>
+
+      <div class="metric-comparison">
+        <div class="chart-legend"><span><i class="swatch swatch--base"></i>Baseline</span><span><i class="swatch swatch--weighted"></i>Weighted được chọn</span></div>
+        <div class="metric-row">
+          <b>Accuracy</b>
+          <div class="bar-pair"><span class="bar bar--base" style="width:97.5085%"><em>97,51%</em></span><span class="bar bar--weighted" style="width:95.4128%"><em>95,41%</em></span></div>
+        </div>
+        <div class="metric-row">
+          <b>Attack Precision</b>
+          <div class="bar-pair"><span class="bar bar--base" style="width:98.6085%"><em>98,61%</em></span><span class="bar bar--weighted" style="width:99.9941%"><em>99,99%</em></span></div>
+        </div>
+        <div class="metric-row">
+          <b>Attack Recall</b>
+          <div class="bar-pair"><span class="bar bar--base" style="width:98.7672%"><em>98,77%</em></span><span class="bar bar--weighted" style="width:95.1698%"><em>95,17%</em></span></div>
+        </div>
+        <div class="metric-row">
+          <b>Attack F1</b>
+          <div class="bar-pair"><span class="bar bar--base" style="width:98.6878%"><em>98,69%</em></span><span class="bar bar--weighted" style="width:97.5223%"><em>97,52%</em></span></div>
+        </div>
+        <div class="metric-row metric-row--focus">
+          <b>Normal Specificity</b>
+          <div class="bar-pair"><span class="bar bar--base" style="width:74.281%"><em>74,28%</em></span><span class="bar bar--weighted" style="width:99.8962%"><em>99,90%</em></span></div>
+        </div>
+        <div class="metric-row">
+          <b>Balanced Accuracy</b>
+          <div class="bar-pair"><span class="bar bar--base" style="width:86.5241%"><em>86,52%</em></span><span class="bar bar--weighted" style="width:97.533%"><em>97,53%</em></span></div>
+        </div>
+      </div>
+
+      <aside class="decision-panel">
+        <span>MÔ HÌNH ĐƯỢC CHỌN</span>
+        <h3>Weighted Random Forest</h3>
+        <div class="decision-number"><b>0,10%</b><small>False Positive Rate trên Test</small></div>
+        <p>Phù hợp cho demo realtime vì lưu lượng bình thường gần như không tạo cảnh báo giả.</p>
+        <div class="tradeoff"><b>Đánh đổi đã chấp nhận</b><span>Attack Recall giảm 3,60 điểm phần trăm so với baseline.</span></div>
+      </aside>
+
+      <p class="source">Held-out Test, Attack là lớp dương, cùng 27 feature và cùng tập chia.</p>
+      <span class="slide-number">03 / 08</span>
+    </section>
+
+    <section id="slide-4" class="slide">
+      <header class="topbar"><span>PHẦN 04: KẾT QUẢ THỰC NGHIỆM</span><span>4.4: CONFUSION MATRIX</span></header>
+      <p class="section-kicker">CÙNG TẬP TEST GỒM 3.056.161 MẪU</p>
+      <h2>Hai ma trận nhầm lẫn cho thấy rõ đánh đổi giữa báo sai và bỏ sót</h2>
+
+      <div class="dual-matrix-layout">
+        <article class="model-matrix model-matrix--baseline">
+          <div class="matrix-title"><div><span>MÔ HÌNH THAM CHIẾU</span><h3>Baseline Random Forest</h3></div><b>Recall 98,77%</b></div>
+          <div class="mini-axis mini-axis--top"><span>DỰ ĐOÁN NORMAL</span><span>DỰ ĐOÁN ATTACK</span></div>
+          <div class="mini-matrix-body">
+            <div class="mini-axis mini-axis--left"><span>THỰC TẾ NORMAL</span><span>THỰC TẾ ATTACK</span></div>
+            <div class="mini-matrix">
+              <div class="mini-cell mini-cell--good"><span>TN</span><b>116.694</b><small>Normal nhận đúng</small></div>
+              <div class="mini-cell mini-cell--fp"><span>FP</span><b>40.404</b><small>cảnh báo sai</small></div>
+              <div class="mini-cell mini-cell--fn"><span>FN</span><b>35.741</b><small>Attack bị bỏ sót</small></div>
+              <div class="mini-cell mini-cell--good"><span>TP</span><b>2.863.322</b><small>Attack phát hiện đúng</small></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="model-matrix model-matrix--weighted">
+          <div class="matrix-title"><div><span>MÔ HÌNH DÙNG TRONG MVP</span><h3>Weighted Random Forest</h3></div><b>Recall 95,17%</b></div>
+          <div class="mini-axis mini-axis--top"><span>DỰ ĐOÁN NORMAL</span><span>DỰ ĐOÁN ATTACK</span></div>
+          <div class="mini-matrix-body">
+            <div class="mini-axis mini-axis--left"><span>THỰC TẾ NORMAL</span><span>THỰC TẾ ATTACK</span></div>
+            <div class="mini-matrix">
+              <div class="mini-cell mini-cell--good"><span>TN</span><b>156.935</b><small>Normal nhận đúng</small></div>
+              <div class="mini-cell mini-cell--fp"><span>FP</span><b>163</b><small>cảnh báo sai</small></div>
+              <div class="mini-cell mini-cell--fn"><span>FN</span><b>140.030</b><small>Attack bị bỏ sót</small></div>
+              <div class="mini-cell mini-cell--good"><span>TP</span><b>2.759.033</b><small>Attack phát hiện đúng</small></div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="tradeoff-strip">
+        <div class="tradeoff-change tradeoff-change--good"><span>FALSE POSITIVE</span><b>40.404 <i>xuống</i> 163</b><small>giảm 40.241 cảnh báo nhầm</small></div>
+        <div class="tradeoff-balance"><strong>ĐÁNH ĐỔI</strong><p>Weighted giúp hệ thống ít báo động giả hơn, nhưng bỏ sót thêm nhiều Attack. Nếu ưu tiên an toàn, nhóm cần tối ưu tiếp class weight hoặc threshold.</p></div>
+        <div class="tradeoff-change tradeoff-change--warn"><span>FALSE NEGATIVE</span><b>35.741 <i>lên</i> 140.030</b><small>tăng 104.289 Attack bị bỏ sót</small></div>
+      </div>
+      <span class="slide-number">04 / 08</span>
+    </section>
+
+    <section id="slide-5" class="slide">
+      <header class="topbar"><span>PHẦN 04: KẾT QUẢ THỰC NGHIỆM</span><span>4.5: FEATURE IMPORTANCE</span></header>
+      <p class="section-kicker">MỨC ĐÓNG GÓP TRONG RANDOM FOREST BASELINE</p>
+      <h2>HTTPS, IAT và Header_Length là ba đặc trưng nổi bật nhất</h2>
+
+      <div class="importance-layout">
+        <div class="importance-chart">
+          <div class="importance-axis"><span>0%</span><span>5%</span><span>10%</span><span>15%</span><span>20%</span><span>25%</span></div>
+          <div class="importance-row"><b>HTTPS</b><i><span style="width:94.05%"></span></i><em>23,51%</em></div>
+          <div class="importance-row"><b>IAT</b><i><span style="width:52.84%"></span></i><em>13,21%</em></div>
+          <div class="importance-row"><b>Header_Length</b><i><span style="width:52.50%"></span></i><em>13,12%</em></div>
+          <div class="importance-row"><b>Tot sum</b><i><span style="width:42.77%"></span></i><em>10,69%</em></div>
+          <div class="importance-row"><b>Rate</b><i><span style="width:35.51%"></span></i><em>8,88%</em></div>
+          <div class="importance-row"><b>Max</b><i><span style="width:21.09%"></span></i><em>5,27%</em></div>
+          <div class="importance-row"><b>ack_count</b><i><span style="width:20.64%"></span></i><em>5,16%</em></div>
+          <div class="importance-row"><b>Std</b><i><span style="width:13.88%"></span></i><em>3,47%</em></div>
+          <div class="importance-row"><b>Min</b><i><span style="width:12.03%"></span></i><em>3,01%</em></div>
+          <div class="importance-row"><b>syn_count</b><i><span style="width:11.51%"></span></i><em>2,88%</em></div>
+        </div>
+
+        <div class="importance-summary">
+          <div class="big-ring"><div><b>89,20%</b><span>tổng importance của Top 10</span></div></div>
+          <h3>Mô hình kết hợp nhiều nhóm tín hiệu</h3>
+          <ul>
+            <li><b>Ứng dụng:</b> HTTPS</li>
+            <li><b>Thời gian:</b> IAT và Rate</li>
+            <li><b>Kích thước gói:</b> Header_Length, Tot sum, Min, Max</li>
+            <li><b>TCP:</b> ack_count và syn_count</li>
+          </ul>
+          <p>Importance dùng để giải thích mô hình, không được dùng để loại feature hoặc huấn luyện lại trong MVP.</p>
+        </div>
+      </div>
+
+      <p class="source">Impurity-based feature importance của Phase 3B baseline. Tổng importance của toàn bộ 27 feature bằng 1.</p>
+      <span class="slide-number">05 / 08</span>
+    </section>
+
+    <section id="slide-6" class="slide slide--e2e">
+      <header class="topbar"><span>PHẦN 04: KẾT QUẢ THỰC NGHIỆM</span><span>4.6: KIỂM THỬ END-TO-END</span></header>
+      <p class="section-kicker">MỘT PHIÊN SPARK VÀ DASHBOARD, KHÔNG TẢI LẠI TRANG</p>
+      <h2>Kết quả chuỗi kiểm thử end-to-end theo bốn giai đoạn</h2>
+
+      <div class="e2e-layout">
+        <figure class="academic-chart">
+          <figcaption>Tỷ lệ Attack do mô hình dự đoán trong cửa sổ đại diện</figcaption>
+          <div class="academic-chart-body">
+            <div class="academic-y-axis"><span>100%</span><span>80%</span><span>60%</span><span>40%</span><span>20%</span><span>0%</span></div>
+            <div class="plot-area">
+              <div class="status-zone status-zone--critical"><span>CRITICAL</span></div>
+              <div class="status-zone status-zone--warning"><span>WARNING</span></div>
+              <div class="status-zone status-zone--normal"><span>NORMAL</span></div>
+              <div class="grid-line" style="bottom:100%"></div><div class="grid-line" style="bottom:80%"></div><div class="grid-line" style="bottom:60%"></div><div class="grid-line" style="bottom:40%"></div><div class="grid-line" style="bottom:20%"></div><div class="grid-line" style="bottom:0"></div>
+              <div class="threshold-line threshold-line--80"><span>Ngưỡng 80%</span></div>
+              <div class="threshold-line threshold-line--20"><span>Ngưỡng 20%</span></div>
+              <div class="academic-bars">
+                <div class="academic-category"><div class="bar-column bar-column--zero"><span>0%</span></div><b>NORMAL 1</b><small>Giai đoạn 1</small><em class="status-normal">Normal</em></div>
+                <div class="academic-category"><div class="bar-column bar-column--critical" style="height:100%"><span>100%</span></div><b>DDOS_BURST</b><small>Giai đoạn 2</small><em class="status-critical">Critical</em></div>
+                <div class="academic-category"><div class="bar-column bar-column--zero"><span>0%</span></div><b>NORMAL 2</b><small>Giai đoạn 3</small><em class="status-normal">Normal</em></div>
+                <div class="academic-category"><div class="bar-column bar-column--warning" style="height:50%"><span>50%</span></div><b>MIXED</b><small>Giai đoạn 4</small><em class="status-warning">Warning</em></div>
+              </div>
+            </div>
+          </div>
+          <p>Trạng thái lấy trực tiếp từ attack rate: Normal dưới 20%, Warning từ 20% đến dưới 80%, Critical từ 80% trở lên.</p>
+        </figure>
+
+        <div class="e2e-table-wrap">
+          <h3>Số liệu quan sát</h3>
+          <div class="e2e-table">
+            <div class="e2e-table-head"><span>Kịch bản</span><span>Event rate</span><span>Attack rate</span><span>Alerts</span></div>
+            <div><b>NORMAL 1</b><span>4,8 events/s</span><span>0%</span><strong>0</strong></div>
+            <div><b>DDOS_BURST</b><span>4,8 events/s</span><span>100%</span><strong>60</strong></div>
+            <div><b>NORMAL 2</b><span>4,8 events/s</span><span>0%</span><strong>0</strong></div>
+            <div><b>MIXED</b><span>5,0 events/s</span><span>50%</span><strong>30</strong></div>
+          </div>
+          <div class="method-note"><b>Phạm vi đo</b><span>Mỗi giai đoạn replay 60 sự kiện ở tốc độ cấu hình 5 events/s. Event rate là số sự kiện trong cửa sổ 10 giây chia cho 10, không phải throughput benchmark.</span></div>
+        </div>
+      </div>
+
+      <div class="persistence-strip">
+        <div><span>DEMO CUỐI</span><b>240</b><small>prediction</small></div>
+        <div><span>DEMO CUỐI</span><b>90</b><small>alert</small></div>
+        <div><span>DATABASE SAU KIỂM THỬ</span><b>280</b><small>prediction</small></div>
+        <div><span>DATABASE SAU KIỂM THỬ</span><b>22</b><small>metric windows</small></div>
+        <div><span>DATABASE SAU KIỂM THỬ</span><b>110</b><small>alert</small></div>
+        <div><span>TRÙNG KHÓA CHÍNH</span><b>0</b><small>bản ghi</small></div>
+      </div>
+      <span class="slide-number">06 / 08</span>
+    </section>
+
+    <section id="slide-7" class="slide slide--conclusion">
+      <header class="topbar"><span>PHẦN 05: KẾT LUẬN</span><span>KẾT LUẬN, HẠN CHẾ VÀ HƯỚNG PHÁT TRIỂN</span></header>
+      <p class="section-kicker">5: TỔNG KẾT ĐỒ ÁN</p>
+      <h2>Pipeline Big Data realtime đã hoàn thành từ dữ liệu đến dashboard</h2>
+
+      <div class="conclusion-grid">
+        <article class="conclusion-col conclusion-col--done">
+          <span class="col-index">01</span><h3>Kết luận</h3>
+          <ul>
+            <li>Xử lý toàn bộ 63 CSV CICIoT2023 bằng Spark.</li>
+            <li>Huấn luyện Random Forest nhị phân với 27 feature.</li>
+            <li>Kafka replay dữ liệu liên tục, Spark dự đoán realtime.</li>
+            <li>Dashboard hiển thị trạng thái, biểu đồ và cảnh báo.</li>
+            <li>SQLite giữ lịch sử sau khi hệ thống dừng.</li>
+          </ul>
+          <b class="final-status">MVP PHASE 1–9 HOÀN THÀNH</b>
+        </article>
+
+        <article class="conclusion-col conclusion-col--limit">
+          <span class="col-index">02</span><h3>Hạn chế</h3>
+          <ul>
+            <li>Mô hình chỉ phân loại Normal hoặc Attack.</li>
+            <li>Dữ liệu realtime là replay CSV, chưa bắt packet thật.</li>
+            <li>Kafka, Spark và SQLite chạy trên một máy.</li>
+            <li>Ngưỡng trạng thái phục vụ demo, chưa hiệu chỉnh cho production.</li>
+            <li>Chưa đo throughput và processing latency của Spark.</li>
+          </ul>
+        </article>
+
+        <article class="conclusion-col conclusion-col--next">
+          <span class="col-index">03</span><h3>Hướng phát triển</h3>
+          <ul>
+            <li>Mở rộng sang phân loại đa lớp theo họ tấn công.</li>
+            <li>Thu thập lưu lượng thật và kiểm thử trên mạng IoT thực tế.</li>
+            <li>Hiệu chỉnh ngưỡng cảnh báo theo rủi ro vận hành.</li>
+            <li>Đánh giá nhiều mô hình và tối ưu feature.</li>
+            <li>Xây dựng Lakehouse Bronze, Silver và Gold bằng Delta Lake để lưu lịch sử, tái xử lý dữ liệu và hỗ trợ huấn luyện lại mô hình.</li>
+          </ul>
+        </article>
+      </div>
+      <span class="slide-number">07 / 08</span>
+    </section>
+
+    <section id="slide-8" class="slide slide--demo">
+      <header class="topbar"><span>PHẦN 06: DEMO</span><span>KỊCH BẢN MÔ PHỎNG</span></header>
+      <p class="section-kicker">6: KỊCH BẢN TRÌNH DIỄN</p>
+      <h2>Ba loại kịch bản, bốn giai đoạn trong một luồng liên tục</h2>
+      <p class="subtitle">Dashboard giữ nguyên một tab. Nhóm chỉ thay đổi loại dữ liệu producer gửi vào Kafka.</p>
+
+      <div class="demo-sequence">
+        <article class="demo-step demo-step--normal">
+          <span>GIAI ĐOẠN 1</span><div class="demo-symbol">N</div><h3>NORMAL</h3>
+          <p>Chỉ gửi bản ghi BENIGN</p><b>SAFE, 0% Attack</b>
+        </article>
+        <i class="flow-arrow"></i>
+        <article class="demo-step demo-step--attack">
+          <span>GIAI ĐOẠN 2</span><div class="demo-symbol">!</div><h3>DDOS_BURST</h3>
+          <p>Chỉ gửi các nhãn DDoS</p><b>CRITICAL, 100% Attack</b>
+        </article>
+        <i class="flow-arrow"></i>
+        <article class="demo-step demo-step--normal">
+          <span>GIAI ĐOẠN 3</span><div class="demo-symbol">R</div><h3>PHỤC HỒI</h3>
+          <p>Chuyển lại dữ liệu BENIGN</p><b>SAFE, 0% Attack</b>
+        </article>
+        <i class="flow-arrow"></i>
+        <article class="demo-step demo-step--mixed">
+          <span>GIAI ĐOẠN 4</span><div class="demo-symbol">½</div><h3>MIXED</h3>
+          <p>Xen kẽ Normal và Attack 1:1</p><b>WARNING, 50% Attack</b>
+        </article>
+      </div>
+
+      <div class="demo-observe">
+        <div><span>01</span><p><b>Quan sát trạng thái</b> SAFE chuyển sang CRITICAL, trở lại SAFE rồi dừng ở WARNING.</p></div>
+        <div><span>02</span><p><b>Quan sát biểu đồ</b> Event rate và predicted attack rate cập nhật theo cửa sổ thời gian.</p></div>
+        <div><span>03</span><p><b>Quan sát cảnh báo</b> DDoS tạo 60 alert, Mixed tạo 30 alert. Normal không tạo alert.</p></div>
+        <div><span>04</span><p><b>Kiểm tra sau demo</b> Dừng hệ thống rồi truy vấn SQLite để chứng minh lịch sử vẫn còn.</p></div>
+      </div>
+
+      <div class="demo-note"><b>Thông điệp cần nhấn mạnh:</b> Producer chỉ mô phỏng dữ liệu đầu vào. Trạng thái và cảnh báo trên dashboard luôn được tính từ prediction của mô hình.</div>
+      <span class="slide-number">08 / 08</span>
+    </section>
+  </main>
+</body>
+</html>

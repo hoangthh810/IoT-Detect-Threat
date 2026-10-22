@@ -26,7 +26,11 @@ The priority is a working university-level MVP, not an enterprise platform.
 - `spark/stream_ingest.py`: the Phase 5 Spark Structured Streaming entry point. It reads the Kafka event contract with an explicit schema and exposes separate `valid_events` and `invalid_events` DataFrames without loading a model or assembling a feature vector.
 - `spark/stream_infer.py`: the Phase 6 realtime inference entry point. It reuses Phase 5 ingestion/validation, applies shared unlabeled preprocessing only to valid rows, loads the frozen weighted model once, and writes separate prediction and invalid-event console streams.
 - `spark/stream_analytics.py`: the Phase 7-9 analytics entry point. It reuses Phase 6 predictions to expose event-time metrics/status, one alert per predicted Attack, and the existing invalid-event stream. Optional flags independently enable Phase 8 bounded JSON snapshots and Phase 9 durable SQLite history; the original console mode remains the default.
-- `dashboard/app.py`: the Phase 8 Streamlit presentation layer. It reads only transient Phase 7 snapshots, refreshes every two seconds, and does not create Spark/Kafka/model objects or recalculate analytics.
+- `dashboard/app.py`: the Phase 8 Streamlit presentation layer. It reads only transient Phase 7 snapshots and exposes four native pages: Command Overview, Traffic Matrix, Threat Intelligence, and Pipeline Control. It refreshes live fragments every two seconds, presents the authoritative status as friendly `SAFE`/`WARNING`/`CRITICAL` states, and keeps raw Kafka/window records on the technical page. It does not create Spark/Kafka/model objects or recalculate analytics. `dashboard/premium.css` owns the dark operations-console visual system.
+- `scripts/start_system.sh`: the post-MVP Bash launcher for the existing Kafka, Spark analytics, and Streamlit processes. It enables both Phase 8 snapshots and Phase 9 history, records only launcher-owned PIDs, and never formats Kafka or resets SQLite.
+- `scripts/stop_system.sh`: stops only launcher-owned Streamlit, Spark, and Kafka processes while preserving Kafka storage, snapshots, models, and durable SQLite history.
+- `scripts/run_scenario.sh`: validates readiness and delegates one bounded `NORMAL`, `DDOS_BURST`, or `MIXED` replay to the existing producer.
+- `scripts/demo.sh`: drives the verified `NORMAL -> DDOS_BURST -> NORMAL -> MIXED` sequence by calling `run_scenario.sh`.
 - `scripts/inspect_history.py`: the Phase 9 standard-library SQLite inspection CLI. It prints table counts plus recent metric, prediction, and alert rows without starting Spark, Kafka, or the dashboard.
 - `data/history/iot_ids_history.sqlite3`: the local ignored Phase 9 durable-history artifact. It is never reset automatically and is not the dashboard handoff.
 - `requirements.txt`: verified local PySpark/ML dependencies, `confluent-kafka==2.15.0`, and `streamlit==1.63.0`.
@@ -93,6 +97,8 @@ The producer simulates network events by replaying dataset rows; it does not gen
 - `kafka/producer.py` owns historical CSV iteration, scenario filtering, replay pacing, JSON serialization, and Kafka delivery. It must not load the model, run Spark, synthesize feature values, or emit predictions.
 - `spark/stream_infer.py` owns only online feature preparation, frozen-model inference, binary display-label mapping, and inspectable console output. It must reuse `build_validated_stream(...)` and must not train or select a model.
 - `spark/stream_analytics.py` owns only prediction-derived windows, rates, demo status, alerts, and their console/snapshot/history sinks. It must reuse Phase 6 helpers and must not use simulator metadata for operational decisions.
+- `dashboard/app.py` owns presentation only. Its large friendly status label must map directly from the latest Phase 7 `status`; it must not duplicate thresholds, rates, predictions, or alert decisions.
+- The four Bash scripts under `scripts/` provide process orchestration and scenario convenience only. They must continue to invoke the existing component entry points instead of duplicating producer or analytics behavior.
 
 Keep responsibilities separated by capability: dataset replay, shared Spark preprocessing, offline training, streaming inference, persistence/analytics, dashboard, and focused tests. Do not create placeholder directories or speculative layers before a task needs them.
 
@@ -119,6 +125,9 @@ Keep responsibilities separated by capability: dataset replay, shared Spark prep
 - Prediction and alert identity is Kafka `(topic, partition, offset)` with idempotent insert. Metric identity is `(window_start, window_end)` with UPSERT because update-mode windows are refined across micro-batches.
 - SQLite connections and DataFrame collection stay inside bounded micro-batch callbacks. Do not collect the unbounded streaming DataFrame or add an ORM/Delta layer for this MVP.
 - `--history-db` and `--dashboard-output-dir` are independent. Without the former, Phase 7 console and Phase 8 dashboard modes retain their prior behavior. The dashboard continues to read only transient JSON; durable history is inspected with `scripts/inspect_history.py`.
+- The normal launcher uses `.runtime/logs/` and `.runtime/pids/`, treats PID files as launcher ownership records, never kills a process based only on a port, and preserves externally-started Kafka.
+- Kafka KRaft formatting is a one-time manual setup. No startup, stop, scenario, or demo script may format Kafka, delete its storage, or create a new cluster ID.
+- Operational scripts must preserve `data/history/iot_ids_history.sqlite3`; dashboard snapshots may retain their existing startup-reset behavior.
 - Full Delta Lake layering remains optional unless explicitly adopted later.
 - Develop against a small sample or partition before scaling up.
 - Keep `KNOWN_LABELS` aligned with the 34 valid labels verified across all 63 local partitions; null/empty/unknown labels remain invalid rather than defaulting to Attack.
@@ -127,7 +136,10 @@ Keep responsibilities separated by capability: dataset replay, shared Spark prep
 ## Current workflow
 
 Verified Phase 1 through Phase 9 commands are documented in `README.md`,
-`data/README.md`, and `kafka/README.md`. Phase 3B's
+`data/README.md`, and `kafka/README.md`. The post-MVP normal workflow is
+`./scripts/start_system.sh`, one `run_scenario.sh` call or `./scripts/demo.sh`,
+then `./scripts/stop_system.sh`; the detailed manual commands remain available.
+Phase 3B's
 `models/random_forest_full_baseline/` remains the unweighted reference, while
 `models/random_forest_full_weighted/` is the frozen inference model. The final
 Phase 9 run used Python 3.12.14, Java 17.0.20, Kafka 4.3.1, Spark/PySpark 3.5.7,

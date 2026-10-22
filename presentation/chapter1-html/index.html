@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Chương 1 — Tổng quan đề tài</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <main class="deck" aria-label="Trình chiếu Chương 1">
+      <!-- SLIDE 1: MỞ CHƯƠNG -->
+      <section class="slide slide--cover active" data-title="Tổng quan đề tài" aria-hidden="false">
+        <img class="cover-image" src="assets/cover.png" alt="Thành phố và nhà máy IoT được bảo vệ bởi hệ thống an ninh mạng">
+        <div class="cover-shade"></div>
+
+        <header class="slide-header slide-header--cover">
+          <span>ĐỒ ÁN BIG DATA</span>
+          <span>CHƯƠNG 01</span>
+        </header>
+
+        <div class="cover-copy">
+          <p class="eyebrow" data-edit>CHƯƠNG 1</p>
+          <h1 data-edit>Tổng quan đề tài</h1>
+          <div class="cover-rule"></div>
+          <h2 data-edit>Xây dựng hệ thống phân tích dữ liệu lớn thời gian thực phát hiện xâm nhập mạng IoT</h2>
+          <p class="cover-scope" data-edit>Kafka · Spark Structured Streaming · Spark MLlib · Streamlit</p>
+        </div>
+
+        <div class="chapter-map" aria-label="Nội dung chương">
+          <span><b>01</b> Đặt vấn đề</span>
+          <span><b>02</b> Tình trạng hiện nay</span>
+          <span><b>03</b> Giải pháp đề xuất của nhóm</span>
+        </div>
+        <span class="slide-number">01 / 05</span>
+      </section>
+
+      <!-- SLIDE 2: ĐẶT VẤN ĐỀ -->
+      <section class="slide" data-title="Đặt vấn đề" aria-hidden="true">
+        <header class="slide-header">
+          <span>CHƯƠNG 1 · TỔNG QUAN ĐỀ TÀI</span>
+          <span>01</span>
+        </header>
+
+        <div class="section-kicker">1. ĐẶT VẤN ĐỀ</div>
+        <h2 class="slide-title" data-edit>Dữ liệu IoT không ngừng, dấu hiệu tấn công xuất hiện xen kẽ</h2>
+
+        <div class="problem-layout">
+          <div class="problem-copy">
+            <p class="lead" data-edit>Camera, cảm biến, gateway và thiết bị thông minh liên tục trao đổi dữ liệu. Một thiết bị bị xâm nhập có thể phát tán lưu lượng bất thường ngay trong dòng dữ liệu bình thường.</p>
+
+            <div class="issue-list">
+              <article class="issue">
+                <span class="issue-index">01</span>
+                <div>
+                  <h3 data-edit>Dữ liệu đến liên tục</h3>
+                  <p data-edit>Tốc độ và đặc trưng lưu lượng thay đổi theo thời gian, khó theo dõi bằng thao tác thủ công.</p>
+                </div>
+              </article>
+              <article class="issue">
+                <span class="issue-index">02</span>
+                <div>
+                  <h3 data-edit>Thiết bị và hành vi đa dạng</h3>
+                  <p data-edit>Cùng một mạng có nhiều loại thiết bị, tạo ra các mẫu giao tiếp rất khác nhau.</p>
+                </div>
+              </article>
+              <article class="issue">
+                <span class="issue-index">03</span>
+                <div>
+                  <h3 data-edit>Phát hiện trễ làm giảm khả năng phản ứng</h3>
+                  <p data-edit>Kết quả chỉ xuất hiện sau khi tổng hợp log khiến cảnh báo mất tính thời điểm.</p>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <figure class="image-frame problem-visual">
+            <img src="assets/problem.png" alt="Thiết bị IoT kết nối qua gateway và một thiết bị phát sinh lưu lượng tấn công">
+            <figcaption data-edit>Lưu lượng tấn công có thể ẩn trong dòng sự kiện hợp lệ</figcaption>
+          </figure>
+        </div>
+
+        <div class="takeaway" data-edit><b>Bài toán đặt ra:</b> phân tích sự kiện ngay khi phát sinh và duy trì giám sát trong suốt phiên hoạt động.</div>
+        <span class="slide-number">02 / 05</span>
+      </section>
+
+      <!-- SLIDE 3: TÌNH TRẠNG HIỆN NAY — CÁC CÁCH TIẾP CẬN -->
+      <section class="slide" data-title="Tình trạng hiện nay" aria-hidden="true">
+        <header class="slide-header">
+          <span>CHƯƠNG 1 · TỔNG QUAN ĐỀ TÀI</span>
+          <span>02</span>
+        </header>
+
+        <div class="section-kicker">2. TÌNH TRẠNG HIỆN NAY</div>
+        <h2 class="slide-title" data-edit>Ba cách tiếp cận phổ biến mới giải quyết từng phần của bài toán</h2>
+
+        <div class="approach-list">
+          <article class="approach approach--blue">
+            <div class="approach-mark">A</div>
+            <div class="approach-main">
+              <h3 data-edit>Luật và chữ ký tấn công</h3>
+              <p data-edit>Nhận diện tốt các mẫu đã biết, nhưng cần cập nhật thủ công khi hành vi tấn công thay đổi.</p>
+            </div>
+            <div class="approach-note" data-edit><b>Điểm mạnh</b><br>Dễ giải thích</div>
+            <div class="approach-note approach-note--risk" data-edit><b>Hạn chế</b><br>Phụ thuộc mẫu có sẵn</div>
+          </article>
+
+          <article class="approach approach--teal">
+            <div class="approach-mark">B</div>
+            <div class="approach-main">
+              <h3 data-edit>Phân tích log theo lô</h3>
+              <p data-edit>Phù hợp điều tra sau sự cố, nhưng tạo khoảng trễ giữa thời điểm sự kiện xảy ra và lúc có kết quả.</p>
+            </div>
+            <div class="approach-note" data-edit><b>Điểm mạnh</b><br>Dễ tổng hợp</div>
+            <div class="approach-note approach-note--risk" data-edit><b>Hạn chế</b><br>Không phản ánh tức thời</div>
+          </article>
+
+          <article class="approach approach--violet">
+            <div class="approach-mark">C</div>
+            <div class="approach-main">
+              <h3 data-edit>Mô hình học máy trên dữ liệu tĩnh</h3>
+              <p data-edit>Cho kết quả đánh giá tốt trong môi trường thử nghiệm, nhưng thường tách rời khâu thu nhận, cảnh báo và lưu lịch sử.</p>
+            </div>
+            <div class="approach-note" data-edit><b>Điểm mạnh</b><br>Học được mẫu phức tạp</div>
+            <div class="approach-note approach-note--risk" data-edit><b>Hạn chế</b><br>Thiếu luồng vận hành</div>
+          </article>
+        </div>
+
+        <p class="source-note" data-edit>Nhận xét tập trung vào cách triển khai thực tế của bài toán, không phủ nhận giá trị của từng phương pháp riêng lẻ.</p>
+        <span class="slide-number">03 / 05</span>
+      </section>
+
+      <!-- SLIDE 4: TÌNH TRẠNG HIỆN NAY — KHOẢNG TRỐNG -->
+      <section class="slide" data-title="Khoảng trống cần giải quyết" aria-hidden="true">
+        <header class="slide-header">
+          <span>CHƯƠNG 1 · TỔNG QUAN ĐỀ TÀI</span>
+          <span>02</span>
+        </header>
+
+        <div class="section-kicker">2. TÌNH TRẠNG HIỆN NAY</div>
+        <h2 class="slide-title" data-edit>Khoảng trống nằm ở khả năng vận hành liên tục từ dữ liệu đến cảnh báo</h2>
+
+        <div class="broken-flow" aria-label="Quy trình rời rạc thường gặp">
+          <div class="flow-node">
+            <span>01</span>
+            <b data-edit>Nguồn IoT</b>
+            <small data-edit>Sự kiện mạng phát sinh liên tục</small>
+          </div>
+          <div class="flow-link flow-link--broken"><i></i><em data-edit>Xuất log thủ công</em></div>
+          <div class="flow-node">
+            <span>02</span>
+            <b data-edit>Phân tích offline</b>
+            <small data-edit>Xử lý sau khi đã gom đủ dữ liệu</small>
+          </div>
+          <div class="flow-link flow-link--broken"><i></i><em data-edit>Chờ kết quả</em></div>
+          <div class="flow-node">
+            <span>03</span>
+            <b data-edit>Báo cáo</b>
+            <small data-edit>Thiếu trạng thái trực tiếp và lịch sử thống nhất</small>
+          </div>
+        </div>
+
+        <div class="gap-layout">
+          <div class="gap-statement">
+            <p class="gap-number">01</p>
+            <p data-edit>Độ trễ giữa sự kiện và kết quả khiến cảnh báo thiếu tính thời điểm.</p>
+          </div>
+          <div class="gap-statement">
+            <p class="gap-number">02</p>
+            <p data-edit>Các công cụ rời rạc làm khó việc kiểm chứng toàn bộ luồng xử lý.</p>
+          </div>
+          <div class="gap-statement">
+            <p class="gap-number">03</p>
+            <p data-edit>Demo ngắn theo từng kịch bản chưa thể hiện rõ tính liên tục của hệ thống.</p>
+          </div>
+        </div>
+
+        <div class="takeaway takeaway--dark" data-edit><b>Nhu cầu:</b> một pipeline duy nhất tiếp nhận dữ liệu liên tục, suy luận ngay trên luồng, tạo cảnh báo và lưu lại lịch sử.</div>
+        <span class="slide-number">04 / 05</span>
+      </section>
+
+      <!-- SLIDE 5: GIẢI PHÁP ĐỀ XUẤT CỦA NHÓM -->
+      <section class="slide" data-title="Giải pháp đề xuất của nhóm" aria-hidden="true">
+        <header class="slide-header">
+          <span>CHƯƠNG 1 · TỔNG QUAN ĐỀ TÀI</span>
+          <span>03</span>
+        </header>
+
+        <div class="section-kicker">3. GIẢI PHÁP ĐỀ XUẤT CỦA NHÓM</div>
+        <h2 class="slide-title solution-title" data-edit>Xây dựng hệ thống phân tích dữ liệu lớn thời gian thực phát hiện xâm nhập mạng IoT</h2>
+
+        <figure class="solution-visual">
+          <img src="assets/solution.png" alt="Kiến trúc từ thiết bị IoT qua xử lý luồng, học máy đến dashboard cảnh báo">
+        </figure>
+
+        <div class="stage-labels" aria-label="Các khối xử lý chính">
+          <div><b>Kafka</b><span data-edit>Tiếp nhận và replay sự kiện</span></div>
+          <div><b>Spark Streaming</b><span data-edit>Kiểm tra và xử lý liên tục</span></div>
+          <div><b>Random Forest</b><span data-edit>Dự đoán Normal hoặc Attack</span></div>
+          <div><b>Streamlit + SQLite</b><span data-edit>Dashboard, cảnh báo và lịch sử</span></div>
+        </div>
+
+        <div class="solution-footer">
+          <p data-edit><b>Dữ liệu mô phỏng:</b> CICIoT2023</p>
+          <p data-edit><b>Kịch bản trình diễn:</b> Normal · DDoS Burst · Mixed</p>
+          <p data-edit><b>Giá trị chính:</b> thể hiện luồng end-to-end hoạt động liên tục</p>
+        </div>
+        <span class="slide-number">05 / 05</span>
+      </section>
+    </main>
+
+    <nav class="controls" aria-label="Điều khiển trình chiếu">
+      <button id="prevBtn" type="button" aria-label="Trang trước">←</button>
+      <div id="dots" class="dots" aria-label="Danh sách trang"></div>
+      <span id="counter" class="counter">1 / 5</span>
+      <button id="editBtn" type="button" aria-pressed="false" title="Cho phép sửa chữ trực tiếp trong trình duyệt">Sửa chữ</button>
+      <button id="fullscreenBtn" type="button" title="Toàn màn hình">Toàn màn hình</button>
+      <button id="nextBtn" type="button" aria-label="Trang sau">→</button>
+    </nav>
+    <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

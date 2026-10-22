@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light">
+  <title>Chương 3: Kiến trúc hệ thống và quy trình xử lý Big Data</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="deck" aria-label="Chương 3: Kiến trúc hệ thống và quy trình xử lý Big Data">
+    <section id="slide-1" class="slide slide--cover">
+      <div class="cover-grid" aria-hidden="true"></div>
+      <header class="topbar topbar--cover"><span>ĐỒ ÁN BIG DATA: PHÁT HIỆN XÂM NHẬP IOT</span><span>CHƯƠNG 03</span></header>
+      <div class="cover-copy">
+        <p class="eyebrow">CHƯƠNG 3</p>
+        <h1>Kiến trúc hệ thống và quy trình xử lý Big Data</h1>
+        <p>Huấn luyện offline với Spark MLlib, truyền dữ liệu qua Kafka và suy luận realtime bằng Spark Structured Streaming</p>
+      </div>
+
+      <div class="cover-architecture" aria-label="Hai luồng offline và realtime">
+        <div class="cover-lane cover-lane--offline"><span>OFFLINE</span><b>CICIoT2023</b><i></i><b>SPARK ML</b><i></i><strong>MODEL</strong></div>
+        <div class="cover-lane cover-lane--online"><span>REALTIME</span><b>PRODUCER</b><i></i><b>KAFKA</b><i></i><b>SPARK</b><i></i><strong>DASHBOARD</strong></div>
+        <div class="cover-core"><small>DÙNG CHUNG</small><b>27 FEATURE</b></div>
+      </div>
+
+      <div class="cover-scope">
+        <span>01 Kiến trúc</span><span>02 Xử lý và huấn luyện</span><span>03 Streaming inference</span><span>04 Big Data 5V</span>
+      </div>
+      <span class="slide-number">01 / 10</span>
+    </section>
+
+    <section id="slide-2" class="slide">
+      <header class="topbar"><span>CHƯƠNG 03: KIẾN TRÚC VÀ XỬ LÝ BIG DATA</span><span>3.1: KIẾN TRÚC TỔNG THỂ</span></header>
+      <p class="section-kicker">HAI LUỒNG XỬ LÝ, MỘT HỢP ĐỒNG FEATURE</p>
+      <h2>Huấn luyện offline tách biệt với suy luận realtime</h2>
+
+      <div class="architecture-map">
+        <div class="lane-label lane-label--offline"><span>LUỒNG OFFLINE</span><b>Tạo và đánh giá mô hình</b></div>
+        <div class="architecture-lane architecture-lane--offline">
+          <article><small>INPUT</small><b>63 CSV</b><span>45 triệu dòng</span></article><i></i>
+          <article><small>SPARK</small><b>Tiền xử lý</b><span>27 feature</span></article><i></i>
+          <article><small>MLLIB</small><b>Random Forest</b><span>Train, Validation, Test</span></article><i></i>
+          <article class="node--artifact"><small>ARTIFACT</small><b>Frozen model</b><span>lưu dạng Spark MLlib</span></article>
+        </div>
+
+        <div class="shared-contract"><span>HỢP ĐỒNG DÙNG CHUNG</span><b>Cùng danh sách 27 feature và cùng hàm tiền xử lý</b><small>Giảm sai lệch giữa lúc huấn luyện và lúc suy luận</small></div>
+
+        <div class="lane-label lane-label--online"><span>LUỒNG REALTIME</span><b>Tiếp nhận, dự đoán và hiển thị</b></div>
+        <div class="architecture-lane architecture-lane--online">
+          <article><small>SIMULATOR</small><b>CSV replay</b><span>Normal hoặc Attack</span></article><i></i>
+          <article><small>BROKER</small><b>Kafka</b><span>iot-network-events</span></article><i></i>
+          <article><small>STREAMING</small><b>Spark inference</b><span>model đã đóng băng</span></article><i></i>
+          <article><small>OUTPUT</small><b>Analytics</b><span>metrics và alerts</span></article><i></i>
+          <article><small>PRESENTATION</small><b>Dashboard</b><span>trạng thái trực tiếp</span></article>
+        </div>
+      </div>
+
+      <div class="architecture-rule"><b>Nguyên tắc:</b> streaming job chỉ tải mô hình đã huấn luyện, không huấn luyện lại và không dùng metadata mô phỏng để tạo prediction.</div>
+      <span class="slide-number">02 / 10</span>
+    </section>
+
+    <section id="slide-3" class="slide slide--roles">
+      <header class="topbar"><span>CHƯƠNG 03: KIẾN TRÚC VÀ XỬ LÝ BIG DATA</span><span>3.2: VAI TRÒ CÔNG NGHỆ</span></header>
+      <p class="section-kicker">PHÂN TÁCH TRÁCH NHIỆM</p>
+      <h2>Mỗi công nghệ giải quyết một phần cụ thể của pipeline</h2>
+
+      <div class="roles-table">
+        <div class="roles-head"><span>THÀNH PHẦN</span><span>TRÁCH NHIỆM TRONG ĐỒ ÁN</span><span>RANH GIỚI</span></div>
+        <div class="roles-row"><div class="tech-mark tech-mark--spark">SP</div><b>Apache Spark</b><p>Đọc 63 CSV, kiểm tra dữ liệu, tiền xử lý và tạo vector 27 chiều trên DataFrame.</p><small>Không phát sự kiện lên Kafka.</small></div>
+        <div class="roles-row"><div class="tech-mark tech-mark--ml">ML</div><b>Spark MLlib</b><p>Huấn luyện, đánh giá, lưu và tải Random Forest phân loại Normal hoặc Attack.</p><small>Không huấn luyện trong streaming job.</small></div>
+        <div class="roles-row"><div class="tech-mark tech-mark--kafka">KF</div><b>Apache Kafka</b><p>Làm bộ đệm sự kiện và tách producer khỏi consumer theo thời gian.</p><small>Không làm sạch dữ liệu và không dự đoán.</small></div>
+        <div class="roles-row"><div class="tech-mark tech-mark--stream">SS</div><b>Structured Streaming</b><p>Đọc Kafka, kiểm tra schema, dùng model đã lưu và tính metrics theo event time.</p><small>Không sử dụng ground_truth để quyết định trạng thái.</small></div>
+        <div class="roles-row"><div class="tech-mark tech-mark--ui">ST</div><b>Streamlit</b><p>Đọc JSON snapshot và trình bày trạng thái, biểu đồ, cảnh báo trên bốn trang.</p><small>Không import Spark, Kafka hoặc model.</small></div>
+        <div class="roles-row"><div class="tech-mark tech-mark--db">DB</div><b>SQLite</b><p>Lưu predictions, metrics và alerts để truy vấn sau khi hệ thống dừng.</p><small>Dashboard không đọc trực tiếp database.</small></div>
+      </div>
+      <p class="version-note">Môi trường đã xác minh: Kafka 4.3.1, PySpark 3.5.7, Scala 2.12.18, Java 17 và Streamlit 1.63.0.</p>
+      <span class="slide-number">03 / 10</span>
+    </section>
+
+    <section id="slide-4" class="slide slide--batch">
+      <header class="topbar"><span>CHƯƠNG 03: KIẾN TRÚC VÀ XỬ LÝ BIG DATA</span><span>3.3: SPARK BATCH PROCESSING</span></header>
+      <p class="section-kicker">CHUẨN BỊ DỮ LIỆU CHO HỌC MÁY</p>
+      <h2>Spark chuyển dữ liệu thô thành vector đặc trưng có thể huấn luyện</h2>
+
+      <div class="batch-pipeline">
+        <article><span>01</span><b>CSV thô</b><p>63 file, 40 cột</p></article><i></i>
+        <article><span>02</span><b>Kiểm tra schema</b><p>Xác nhận cột bắt buộc</p></article><i></i>
+        <article><span>03</span><b>Chọn trường</b><p>27 feature và Label</p></article><i></i>
+        <article><span>04</span><b>Ép kiểu, lọc lỗi</b><p>Loại null, NaN, vô hạn</p></article><i></i>
+        <article><span>05</span><b>Chuẩn hóa nhãn</b><p>Normal bằng 0, Attack bằng 1</p></article><i></i>
+        <article><span>06</span><b>VectorAssembler</b><p>Vector 27 chiều</p></article>
+      </div>
+
+      <div class="batch-evidence">
+        <div class="volume-flow">
+          <h3>Quy mô xử lý toàn bộ dữ liệu</h3>
+          <div><span>DÒNG THÔ</span><b>45.019.243</b></div><i></i>
+          <div><span>ML-READY</span><b>45.018.243</b></div><i></i>
+          <div><span>SAU LOẠI TRÙNG</span><b>20.362.785</b></div>
+        </div>
+        <div class="batch-policy">
+          <h3>Chính sách khác nhau theo ngữ cảnh</h3>
+          <p><b>Offline:</b> loại trùng trên 27 feature và nhãn trước khi chia tập để ngăn leakage.</p>
+          <p><b>Realtime:</b> giữ từng sự kiện hợp lệ vì các lần xuất hiện lặp lại có thể là hoạt động mạng thật.</p>
+        </div>
+      </div>
+
+      <div class="shared-code-note"><span>SHARED PREPROCESSING</span><b>Cả huấn luyện và streaming đều gọi cùng logic chọn 27 feature và lắp vector.</b></div>
+      <span class="slide-number">04 / 10</span>
+    </section>
+
+    <section id="slide-5" class="slide slide--training">
+      <header class="topbar"><span>CHƯƠNG 03: KIẾN TRÚC VÀ XỬ LÝ BIG DATA</span><span>3.4: HUẤN LUYỆN MÔ HÌNH</span></header>
+      <p class="section-kicker">RANDOM FOREST TRÊN SPARK MLLIB</p>
+      <h2>Validation quyết định mô hình, Test chỉ dùng để đánh giá cuối</h2>
+
+      <div class="training-flow">
+        <div class="split-block">
+          <h3>Phân chia dữ liệu</h3>
+          <div class="split-visual"><span class="split-train">TRAIN 70%</span><span class="split-validation">VALIDATION 15%</span><span class="split-test">TEST 15%</span></div>
+          <p>Seed 42. Hai lớp xuất hiện trong cả ba tập. Model chỉ fit trên Train.</p>
+        </div>
+        <div class="training-connector"></div>
+        <div class="fit-block">
+          <h3>Huấn luyện có trọng số</h3>
+          <div class="weight-scale"><div><span>NORMAL</span><b>9,7206</b></div><i></i><div><span>ATTACK</span><b>0,5271</b></div></div>
+          <p>Class weight tính từ Train, không đưa vào vector 27 chiều và không xuất hiện trong sự kiện Kafka.</p>
+        </div>
+        <div class="training-connector"></div>
+        <div class="model-block">
+          <h3>Mô hình dùng trong MVP</h3>
+          <b class="model-name">Weighted Random Forest</b>
+          <p>20 cây, maxDepth 5, maxBins 32, seed 42.</p>
+          <small>Lưu tại models/random_forest_full_weighted</small>
+        </div>
+      </div>
+
+      <div class="selection-process">
+        <div><span>1</span><b>Train</b><p>Fit baseline và một candidate có class weight.</p></div>
+        <i></i><div><span>2</span><b>Validation</b><p>So sánh Recall, Specificity, F1 và confusion matrix.</p></div>
+        <i></i><div><span>3</span><b>Freeze quyết định</b><p>Chấp nhận đánh đổi trước khi xem Test.</p></div>
+        <i></i><div><span>4</span><b>Test một lần</b><p>Đánh giá khách quan và lưu model.</p></div>
+        <i></i><div><span>5</span><b>Reload</b><p>Tiến trình mới tải model và dự đoán thành công.</p></div>
+      </div>
+
+      <div class="leakage-note"><b>Kiểm soát leakage:</b> loại mẫu trùng trước khi chia tập, tính weight chỉ từ Train và không dùng Test để chọn mô hình.</div>
+      <span class="slide-number">05 / 10</span>
+    </section>
+
+    <section id="slide-6" class="slide slide--mllib">
+      <header class="topbar"><span>CHƯƠNG 03: KIẾN TRÚC VÀ XỬ LÝ BIG DATA</span><span>3.5: QUY TRÌNH HUẤN LUYỆN TRÊN MLLIB</span></header>
+      <p class="section-kicker">TỪ SPARK DATAFRAME ĐẾN MODEL ARTIFACT</p>
+      <h2>MLlib huấn luyện Random Forest trực tiếp trên dữ liệu đã phân vùng</h2>
+
+      <div class="mllib-flow" aria-label="Quy trình huấn luyện Random Forest trong Spark MLlib">
+        <article class="mllib-stage mllib-stage--data">
+          <span class="mllib-step">01 / INPUT</span>
+          <b>Train DataFrame</b>
+          <div class="schema-line"><code>features</code><small>Vector 27 chiều</small></div>
+          <div class="schema-line"><code>binary_label</code><small>0 Normal, 1 Attack</small></div>
+          <div class="schema-line"><code>class_weight</code><small>Trọng số tính từ Train</small></div>
+        </article>
+        <i class="mllib-arrow"></i>
+        <article class="mllib-stage mllib-stage--estimator">
+          <span class="mllib-step">02 / ESTIMATOR</span>
+          <b>RandomForestClassifier</b>
+          <dl><dt>labelCol</dt><dd>binary_label</dd><dt>featuresCol</dt><dd>features</dd><dt>weightCol</dt><dd>class_weight</dd></dl>
+        </article>
+        <i class="mllib-arrow"></i>
+        <article class="mllib-stage mllib-stage--fit">
+          <span class="mllib-step">03 / ACTION</span>
+          <b><code>.fit(train)</code></b>
+          <div class="partition-row"><i>P0</i><i>P1</i><i>P2</i><i>Pn</i></div>
+          <p>Spark tính thống kê điểm chia trên các partition rồi tổng hợp để xây dựng cây.</p>
+        </article>
+        <i class="mllib-arrow"></i>
+        <article class="mllib-stage mllib-stage--model">
+          <span class="mllib-step">04 / OUTPUT</span>
+          <b>RF ClassificationModel</b>
+          <div class="tree-glyph" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+          <p>Ensemble 20 cây, tổng hợp kết quả thành xác suất và lớp dự đoán.</p>
+        </article>
+      </div>
+
+      <div class="mllib-detail-grid">
+        <div class="mllib-config">
+          <h3>Cấu hình đã cố định</h3>
+          <div><span>numTrees</span><b>20</b></div>
+          <div><span>maxDepth</span><b>5</b></div>
+          <div><span>maxBins</span><b>32</b></div>
+          <div><span>seed</span><b>42</b></div>
+          <p>Random Forest là mô hình cây nên pipeline không cần chuẩn hóa thang đo feature.</p>
+        </div>
+        <div class="mllib-transform">
+          <h3>Đánh giá bằng <code>.transform()</code></h3>
+          <div class="output-columns"><span>rawPrediction</span><span>probability</span><span>prediction</span></div>
+          <p>Validation phục vụ chọn mô hình. Test chỉ chạy sau khi quyết định đã được đóng băng.</p>
+        </div>
+        <div class="mllib-artifact">
+          <h3>Lưu và tái sử dụng</h3>
+          <b>models/random_forest_full_weighted</b>
+          <p>Artifact MLlib được tải lại ở tiến trình mới và dùng trực tiếp cho streaming inference.</p>
+        </div>
+      </div>
+
+      <div class="mllib-runtime"><b>Ngữ cảnh thực nghiệm:</b><span>Spark local[8], driver 6 GiB. Đây là minh chứng xử lý phân vùng trên máy đơn, không tuyên bố benchmark cluster.</span><small>class_weight chỉ tồn tại khi train, không thuộc vector 27 chiều và không đi qua Kafka.</small></div>
+      <span class="slide-number">06 / 10</span>
+    </section>
+
+    <section id="slide-7" class="slide slide--kafka">
+      <header class="topbar"><span>CHƯƠNG 03: KIẾN TRÚC VÀ XỬ LÝ BIG DATA</span><span>3.6: DATASET REPLAY QUA KAFKA</span></header>
+      <p class="section-kicker">MÔ PHỎNG LUỒNG DỮ LIỆU THỜI GIAN THỰC</p>
+      <h2>Quy trình phát lại CICIoT2023 qua Kafka</h2>
+
+      <div class="replay-flow" aria-label="Quy trình dataset replay qua Kafka">
+        <article class="replay-stage replay-stage--source">
+          <span class="replay-index">01</span><i>CSV</i>
+          <b>Dataset lịch sử</b>
+          <p>Các bản ghi mạng đang nằm tĩnh trong 63 file CICIoT2023.</p>
+        </article>
+        <div class="replay-link"><span>đọc tuần tự</span><i></i></div>
+        <article class="replay-stage replay-stage--producer">
+          <span class="replay-index">02</span><i>PY</i>
+          <b>Kafka Producer</b>
+          <p>Chọn bản ghi theo kịch bản và đọc lần lượt từng dòng.</p>
+        </article>
+        <div class="replay-link"><span>tạo event</span><i></i></div>
+        <article class="replay-stage replay-stage--event">
+          <span class="replay-index">03</span><i>JSON</i>
+          <b>Thông điệp JSON</b>
+          <p>Giữ 27 feature và thêm event_time, scenario, ground_truth, source_label.</p>
+        </article>
+        <div class="replay-link"><span>gửi liên tục</span><i></i></div>
+        <article class="replay-stage replay-stage--broker">
+          <span class="replay-index">04</span><i>KF</i>
+          <b>Kafka topic</b>
+          <p>iot-network-events lưu từng message theo thứ tự và quản lý offset.</p>
+        </article>
+        <div class="replay-link"><span>consume</span><i></i></div>
+        <article class="replay-stage replay-stage--spark">
+          <span class="replay-index">05</span><i>SS</i>
+          <b>Spark Streaming</b>
+          <p>Đọc sự kiện mới theo micro-batch và kiểm tra schema.</p>
+        </article>
+        <div class="replay-link"><span>suy luận</span><i></i></div>
+        <article class="replay-stage replay-stage--model">
+          <span class="replay-index">06</span><i>RF</i>
+          <b>Model dự đoán</b>
+          <p>Vector 27 chiều được phân loại thành Normal hoặc Attack.</p>
+        </article>
+      </div>
+
+      <div class="replay-timeline">
+        <div class="timeline-heading"><span>TỐC ĐỘ DEMO</span><b>5 events mỗi giây</b><small>Producer tạo nhịp phát để Spark nhận một luồng liên tục</small></div>
+        <div class="timeline-second"><span>GIÂY 01</span><div><i>E01</i><i>E02</i><i>E03</i><i>E04</i><i>E05</i></div></div>
+        <div class="timeline-continuity"><i></i><span>tiếp tục</span><i></i></div>
+        <div class="timeline-second"><span>GIÂY 02</span><div><i>E06</i><i>E07</i><i>E08</i><i>E09</i><i>E10</i></div></div>
+      </div>
+
+      <div class="replay-context">
+        <div><span>KỊCH BẢN ĐIỀU KHIỂN PRODUCER</span><b>NORMAL</b><small>chọn BENIGN</small><b>DDOS_BURST</b><small>chọn DDoS</small><b>MIXED</b><small>Normal và Attack theo tỷ lệ 1:1</small></div>
+        <p><b>Vai trò của Kafka:</b> tách bên gửi khỏi bên xử lý, làm bộ đệm và lưu offset. Kafka không làm sạch dữ liệu và không chạy mô hình.</p>
+      </div>
+
+      <p class="footnote">Dataset replay chỉ mô phỏng luồng realtime từ dữ liệu lịch sử. Hệ thống chưa thu packet trực tiếp từ thiết bị IoT.</p>
+      <span class="slide-number">07 / 10</span>
+    </section>
+
+    <section id="slide-8" class="slide slide--streaming">
+      <header class="topbar"><span>CHƯƠNG 03: KIẾN TRÚC VÀ XỬ LÝ BIG DATA</span><span>3.7: STREAMING INFERENCE</span></header>
+      <p class="section-kicker">SPARK STRUCTURED STREAMING</p>
+      <h2>Pipeline suy luận với Spark Structured Streaming</h2>
+
+      <div class="academic-stream-flow" aria-label="Pipeline suy luận thời gian thực bằng Spark Structured Streaming">
+        <article class="stream-stage stream-stage--source">
+          <span>01 / INGESTION</span><b>Nguồn Kafka</b>
+          <p>Đọc topic cùng topic, partition, offset và timestamp của broker.</p>
+        </article>
+        <div class="stream-link"><span>binary value</span><i></i></div>
+        <article class="stream-stage stream-stage--parse">
+          <span>02 / DECODING</span><b>Phân tích JSON</b>
+          <p>Áp dụng schema tường minh gồm 4 metadata và 27 trường double.</p>
+        </article>
+        <div class="stream-link"><span>typed row</span><i></i></div>
+        <article class="stream-stage stream-stage--gate">
+          <span>03 / QUALITY GATE</span><b>Kiểm tra dữ liệu</b>
+          <p>Kiểm tra JSON, event_time, trường bắt buộc và giá trị số.</p>
+        </article>
+        <div class="stream-link stream-link--valid"><span>valid events</span><i></i></div>
+        <article class="stream-stage stream-stage--vector">
+          <span>04 / FEATURES</span><b>Tạo vector đặc trưng</b>
+          <p>Shared preprocessing chọn đúng thứ tự feature và chạy VectorAssembler.</p>
+        </article>
+        <div class="stream-link"><span>features</span><i></i></div>
+        <article class="stream-stage stream-stage--model">
+          <span>05 / INFERENCE</span><b>Random Forest đã huấn luyện</b>
+          <p>MLlib model đã lưu tạo prediction và probability. Job không huấn luyện lại.</p>
+        </article>
+        <div class="stream-link"><span>scored row</span><i></i></div>
+        <article class="stream-stage stream-stage--output">
+          <span>06 / OUTPUT</span><b>Luồng kết quả dự đoán</b>
+          <div><small>prediction</small><strong>0 hoặc 1</strong></div>
+          <div><small>probability</small><strong>vector xác suất</strong></div>
+        </article>
+
+        <div class="invalid-stream">
+          <span>INVALID EVENTS</span><b>Tách khỏi luồng suy luận</b>
+          <p>Lưu raw JSON, Kafka metadata và lý do lỗi. Các bản ghi này không đi vào model.</p>
+          <small>malformed_json, invalid_event_time, missing_required_field</small>
+        </div>
+      </div>
+
+      <div class="stream-time-study">
+        <div class="time-study-copy">
+          <span>EVENT-TIME PROCESSING</span><b>Cửa sổ trượt trên thời gian sự kiện</b>
+          <p><strong>Window 10 giây</strong> tổng hợp sự kiện. <strong>Slide 5 giây</strong> tạo một cửa sổ mới. <strong>Watermark 30 giây</strong> giới hạn trạng thái của dữ liệu đến trễ.</p>
+        </div>
+        <div class="time-axis" aria-label="Minh họa cửa sổ 10 giây trượt mỗi 5 giây">
+          <div class="window-bar window-bar--one"><span>W1</span><b>10 giây</b></div>
+          <div class="window-bar window-bar--two"><span>W2</span><b>10 giây</b></div>
+          <div class="axis-line"><i></i><i></i><i></i><i></i></div>
+          <div class="axis-labels"><span>0s</span><span>5s</span><span>10s</span><span>15s</span></div>
+          <small>Hai cửa sổ liên tiếp chồng lấn 5 giây</small>
+        </div>
+        <div class="time-source-note"><span>NGUỒN THỜI GIAN</span><b>event_time</b><p>Producer gắn thời gian sự kiện. Kafka timestamp chỉ ghi nhận thời điểm broker nhận message.</p></div>
+      </div>
+
+      <p class="streaming-rule">Prediction chỉ phụ thuộc vào vector 27 feature và Random Forest. scenario, ground_truth và source_label được giữ riêng để đánh giá kết quả mô phỏng.</p>
+      <span class="slide-number">08 / 10</span>
+    </section>
+
+    <section id="slide-9" class="slide slide--serving">
+      <header class="topbar"><span>CHƯƠNG 03: KIẾN TRÚC VÀ XỬ LÝ BIG DATA</span><span>3.8: ANALYTICS VÀ LƯU TRỮ</span></header>
+      <p class="section-kicker">REALTIME SERVING VÀ DURABLE HISTORY</p>
+      <h2>Luồng Analytics, cảnh báo và lưu trữ kết quả</h2>
+
+      <div class="analytics-map" aria-label="Hai nhánh realtime và lưu trữ lịch sử sau Spark Analytics">
+        <div class="analytics-entry">
+          <span>INPUT STREAM</span><b>Prediction events</b>
+          <div><strong>prediction</strong><small>Normal hoặc Attack</small></div>
+          <div><strong>probability</strong><small>xác suất của model</small></div>
+          <div><strong>Kafka identity</strong><small>topic, partition, offset</small></div>
+        </div>
+        <div class="analytics-entry-link"><i></i></div>
+        <div class="analytics-engine">
+          <span>SPARK ANALYTICS</span><b>Tổng hợp theo cửa sổ thời gian</b>
+          <div class="analytics-operation"><strong>Metrics</strong><small>event rate, normal rate, attack rate</small></div>
+          <div class="analytics-operation analytics-operation--status"><strong>Status</strong><small>Normal dưới 20%, Warning từ 20%, Critical từ 80% Attack</small></div>
+          <div class="analytics-operation analytics-operation--alert"><strong>Alert</strong><small>Mỗi prediction bằng Attack tạo một bản ghi cảnh báo</small></div>
+        </div>
+        <div class="analytics-split"><i></i><i></i></div>
+
+        <div class="analytics-lanes">
+          <div class="analytics-lane analytics-lane--live">
+            <span class="lane-title">NHÁNH REALTIME / PHỤC VỤ HIỂN THỊ</span>
+            <div class="lane-source"><small>TRANSIENT SINK</small><b>JSON Snapshot</b><p>Giữ tối đa 60 metric windows và 100 alerts gần nhất.</p></div>
+            <i class="lane-link"></i>
+            <div class="lane-target"><small>PRESENTATION</small><b>Streamlit Dashboard</b><p>Đọc JSON, gồm 4 trang và tự cập nhật mỗi 2 giây.</p></div>
+          </div>
+
+          <div class="analytics-lane analytics-lane--history">
+            <span class="lane-title">NHÁNH LỊCH SỬ / LƯU TRỮ BỀN VỮNG</span>
+            <div class="lane-source"><small>DURABLE SINK</small><b>SQLite</b><p>Lưu ba bảng predictions, metrics và alerts.</p></div>
+            <i class="lane-link"></i>
+            <div class="lane-target"><small>HISTORY</small><b>Dữ liệu qua restart</b><p>Tiếp tục tra cứu sau khi Spark, Kafka hoặc Dashboard dừng.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="serving-boundaries">
+        <div><span>DASHBOARD DATA SOURCE</span><b>Chỉ đọc JSON Snapshot</b><p>Dashboard không kết nối trực tiếp đến Spark, Kafka, model hoặc SQLite.</p></div>
+        <div><span>SQLITE WRITE POLICY</span><b>Ghi dữ liệu có tính lặp an toàn</b><p>Predictions và alerts dùng topic, partition, offset. Metrics dùng window_start, window_end.</p></div>
+        <div><span>TRẠNG THÁI DỮ LIỆU</span><b>Snapshot có thể reset, lịch sử vẫn còn</b><p>JSON được tạo lại khi analytics khởi động. SQLite không tự xóa khi restart.</p></div>
+      </div>
+
+      <p class="footnote">Metrics, status và alerts được tính từ prediction. ground_truth chỉ dùng để đối chiếu trong kịch bản mô phỏng.</p>
+      <span class="slide-number">09 / 10</span>
+    </section>
+
+    <section id="slide-10" class="slide slide--five-v">
+      <header class="topbar"><span>CHƯƠNG 03: KIẾN TRÚC VÀ XỬ LÝ BIG DATA</span><span>3.9: ĐẶC TRƯNG BIG DATA</span></header>
+      <p class="section-kicker">ĐỐI CHIẾU MÔ HÌNH 5V</p>
+      <h2>Kiến trúc giải quyết dữ liệu lớn ở cả chế độ batch và streaming</h2>
+
+      <div class="five-v-layout">
+        <div class="five-v-ring" aria-label="Năm đặc trưng Big Data">
+          <div class="v-node v-node--volume"><b>VOLUME</b><span>Quy mô</span></div>
+          <div class="v-node v-node--velocity"><b>VELOCITY</b><span>Tốc độ</span></div>
+          <div class="v-node v-node--variety"><b>VARIETY</b><span>Đa dạng</span></div>
+          <div class="v-node v-node--veracity"><b>VERACITY</b><span>Độ tin cậy</span></div>
+          <div class="v-node v-node--value"><b>VALUE</b><span>Giá trị</span></div>
+          <div class="v-core"><span>BIG DATA</span><b>IoT IDS</b></div>
+        </div>
+
+        <div class="five-v-evidence">
+          <div><span>01</span><b>Volume</b><p>45.019.243 dòng, 8,66 GiB và 63 phân vùng CSV. Spark DataFrame xử lý toàn bộ dữ liệu.</p></div>
+          <div><span>02</span><b>Velocity</b><p>Kafka nhận luồng liên tục và Structured Streaming xử lý theo micro-batch, cửa sổ event time.</p></div>
+          <div><span>03</span><b>Variety</b><p>40 cột gốc, 34 nhãn và nhiều kiểu thống kê mạng. Pipeline giữ 27 feature và chuẩn hóa nhãn thành hai lớp.</p></div>
+          <div><span>04</span><b>Veracity</b><p>Schema tường minh, lọc null, NaN, vô hạn, tách invalid stream và kiểm soát dữ liệu trùng.</p></div>
+          <div><span>05</span><b>Value</b><p>Chuyển dữ liệu thành prediction, cảnh báo, dashboard realtime và lịch sử có thể truy vấn.</p></div>
+        </div>
+      </div>
+
+      <div class="five-v-conclusion"><b>Kết luận chương:</b><span>Spark đảm nhiệm xử lý và học máy trên dữ liệu lớn. Kafka đảm nhiệm dòng sự kiện. Structured Streaming nối model đã huấn luyện với analytics realtime.</span></div>
+      <p class="footnote">5V mô tả đặc trưng Big Data, khác với năm chiều chất lượng dữ liệu ở Chương 2. Mức 5 events/s là tốc độ demo, không phải throughput benchmark.</p>
+      <span class="slide-number">10 / 10</span>
+    </section>
+  </main>
+</body>
+</html>

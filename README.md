@@ -14,6 +14,83 @@ alert store. The Phase 8 `.runtime/dashboard/` JSON handoff remains intentionall
 bounded, startup-reset, local, and transient; the dashboard still reads only
 that handoff rather than querying the database.
 
+## Quick Start
+
+### Prerequisites
+
+- Java is available on `PATH`.
+- Apache Kafka 4.3.1 is extracted and discoverable through `KAFKA_HOME` or at
+  `$HOME/kafka_2.13-4.3.1`.
+- Kafka KRaft storage has been formatted once.
+- `.venv` has been created and installed from `requirements.txt`.
+- `models/random_forest_full_weighted/` is present.
+
+### One-time Kafka setup
+
+KRaft formatting initializes a new Kafka storage directory. Run it exactly
+once for a new broker, from the extracted Kafka directory:
+
+```bash
+export KAFKA_HOME=/path/to/kafka_2.13-4.3.1
+cd "$KAFKA_HOME"
+bin/kafka-storage.sh random-uuid
+bin/kafka-storage.sh format --standalone -t <UUID_FROM_PREVIOUS_COMMAND> -c config/server.properties
+```
+
+Never reformat existing Kafka storage during normal startup. The launcher
+deliberately stops with an instruction if storage is unformatted; it never
+formats or deletes Kafka storage automatically. The detailed verified manual
+workflow remains under **Verified Phase 9 workflow**.
+
+### Normal daily startup
+
+From the repository root, start Kafka when needed, ensure the existing topic,
+start Spark analytics with dashboard and durable-history outputs, and start
+Streamlit with one command:
+
+```bash
+./scripts/start_system.sh
+```
+
+Open [http://127.0.0.1:8501](http://127.0.0.1:8501), then run one scenario:
+
+```bash
+./scripts/run_scenario.sh DDOS_BURST
+```
+
+The scenario defaults are 5 events/s and 60 events. Use `--rate` and `--events`
+to override them. To run the complete `NORMAL -> DDOS_BURST -> NORMAL -> MIXED`
+demo instead:
+
+```bash
+./scripts/demo.sh
+```
+
+Stop only the processes owned by the launcher:
+
+```bash
+./scripts/stop_system.sh
+```
+
+SQLite history is preserved and remains inspectable after shutdown:
+
+```bash
+.venv/bin/python scripts/inspect_history.py --limit 10
+```
+
+### Quick Start troubleshooting
+
+- **Kafka distribution not found:** set
+  `KAFKA_HOME=/path/to/kafka_2.13-4.3.1`, or pass `--kafka-home PATH` to the
+  startup script.
+- **Kafka is not reachable on port 9092:** inspect `.runtime/logs/kafka.log`.
+- **Spark startup failed:** inspect `.runtime/logs/spark.log`.
+- **Streamlit startup failed:** inspect `.runtime/logs/streamlit.log`.
+- **Port 8501 is occupied:** identify and stop the existing service; the launcher
+  will not silently select another port or kill it.
+- **Frozen model missing:** restore `models/random_forest_full_weighted/`; the
+  launcher never retrains a model.
+
 The existing source brief is [giới thiệu đồ án.docx](<./giới thiệu đồ án.docx>). Where that brief conflicts with the current repository charter, the scope decisions below take precedence.
 
 ## MVP goal
@@ -114,11 +191,6 @@ These commands do not train a classifier. They validate the labeled and unlabele
 
 ## Verified Phase 3A workflow
 
-<<<<<<< HEAD
-Train one simple Spark MLlib Random Forest baseline on the reproducible Phase 2 splits and report Accuracy, Precision, Recall, F1, and a confusion matrix without tuning.
-
-## Project base on CCIOT2023
-=======
 With the dependency environment activated, train one Random Forest on the bounded development sample:
 
 ```text
@@ -301,7 +373,18 @@ streamlit run dashboard/app.py \
   --server.port 8501
 ```
 
-Open `http://127.0.0.1:8501`. The dashboard refreshes its realtime fragment every two seconds; manual browser refresh is not required. Before metrics arrive, it displays `Waiting for realtime analytics data...` rather than an inferred `Normal` state.
+Open `http://127.0.0.1:8501`. The dashboard refreshes its realtime fragments
+every two seconds; manual browser refresh is not required. Before metrics arrive,
+it displays `Waiting for realtime traffic` rather than an inferred `Normal`
+state.
+
+The current presentation uses four native Streamlit pages: **Command Overview**
+for the authoritative status and primary KPIs, **Traffic Matrix** for processing
+and prediction-volume trends, **Threat Intelligence** for threat-rate and alert
+context, and **Pipeline Control** for pipeline health and raw technical records.
+All four pages continue to read only the existing bounded JSON snapshots. Chart
+summaries are presentation-only; the dashboard does not recalculate status,
+predictions, or alert decisions.
 
 When `--dashboard-output-dir` is supplied, analytics resets `metrics.json` and `alerts.json` to empty lists at startup. Each micro-batch atomically replaces those files using a temporary file and `os.replace`: metrics retain at most 60 windows keyed by `(window_start, window_end)`, while alerts retain at most 100 records deduplicated by `(topic, partition, offset)`. This handoff collects only those small batches. It is not a database, REST/WebSocket service, Kafka output topic, or durable history. Omitting the option retains the verified Phase 7 console-query behavior.
 
@@ -491,4 +574,3 @@ throughput or latency result is claimed.
 
 **MVP COMPLETE.** All required Phase 1 through Phase 9 work is implemented and
 verified. Remaining items in `TASKS.md` are optional backlog only.
->>>>>>> backup-local
